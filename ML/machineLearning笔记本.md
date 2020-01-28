@@ -82,7 +82,7 @@ $$
 * 需要注意不平衡的类别imbalanced classes， 当一个种类占据数据集多数时，预测结果往往会一直是这个类
 
 ## 决策树 Decision tree
-<img src="machineLearning笔记本img/0_0dN6d8THyImxwPeD.png" style="zoom:50%;" />
+<img src="img/0_0dN6d8THyImxwPeD.png" style="zoom:50%;" />
 
 * inner nodes：判断指标
 * leaf nodes：判断结果
