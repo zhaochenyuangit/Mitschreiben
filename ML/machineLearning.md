@@ -3,17 +3,17 @@
 ####  **一、标准化**
 
 1. Z-score标准化
-$$x_{i,std}=\frac{x_i-\mu_i}{\sigma_i}$$
-2. 用Mahalanobis距离，当
-$
-\Sigma=\begin{pmatrix}
-\sigma_1^2&0&0&0\\
-0&\sigma_2^2&\cdots&\vdots\\
-\vdots&\vdots&\ddots&\vdots\\
-0&0&\cdots&\sigma_n^2\\
-\end{pmatrix}
-$
- 时，相当于欧几里得标准化距离
+  $x_{i,std}=\frac{x_i-\mu_i}{\sigma_i}$
+
+2. 用Mahalanobis距离。当$\Sigma $如下时，相当于欧几里得标准化距离
+  $$
+  \Sigma=\begin{pmatrix}
+  \sigma_1^2&0&0&0\\
+  0&\sigma_2^2&\cdots&\vdots\\
+  \vdots&\vdots&\ddots&\vdots\\
+  0&0&\cdots&\sigma_n^2\\
+  \end{pmatrix}
+  $$
 
 #### **二、测距方法**
 $$
