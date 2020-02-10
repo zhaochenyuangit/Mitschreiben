@@ -1,30 +1,34 @@
 ## K近邻 k-NN
 
-####  **一、标准化**
+#### 一、通用知识
 
-1. Z-score标准化
-  $x_{i,std}=\frac{x_i-\mu_i}{\sigma_i}$
+##### （一）、标准化
 
+1. Z-score标准化：$x_{i,std}=\frac{x_i-\mu_i}{\sigma_i}$
+   
 2. 用Mahalanobis距离。当$\Sigma $如下时，相当于欧几里得标准化距离
-  $$
+$$
   \Sigma=\begin{pmatrix}
   \sigma_1^2&0&0&0\\
   0&\sigma_2^2&\cdots&\vdots\\
   \vdots&\vdots&\ddots&\vdots\\
   0&0&\cdots&\sigma_n^2\\
   \end{pmatrix}
-  $$
+$$
 
-#### **二、测距方法**
+##### （二）、测距方法
+
 $$
 \begin{array}{r|c|l}
 L1-norm &\sum_i \begin{vmatrix}u_i-v_i\end{vmatrix}&沿坐标轴折线距离相加，距离相同点在一个正方形上\\
 L2-norm &\sqrt{\sum_i (u_i-v_i)^2}&几何距离，距离相同点在一个圆上\\
+L_\infty-norm&max|x_i|
+\\
 Mahalanobis距离 &\sqrt{(u-v)^T\Sigma^{-1}(u-v)}&因为\Sigma存在，距离相同点可以在椭圆上，\Sigma为（半）正定对称矩阵
 \end{array}
 $$
 
-#### **三、如何选取超参数？**
+##### （三）、如何选取超参数？
 
 $$
 \left\lbrace
@@ -44,42 +48,44 @@ $$
 * $D_v$可以选择k，但$D_t$应视作未来数据，测试集的结果不应反馈到模型中。只有在模型训练好后，才用$D_t$测试模型好坏
 * 若验证集结果不错，但测试集结果很差，可能需要换一个分布，模型（不采用K-NN算法）
 
->**如何采样**
->1. random sampling 随机采样，在非常不幸的情况下，训练集正好没有囊括所有的标签，训练中缺失的标签永远不会被作为预测结果
->2. ***(推荐)*** stratified sampling, 按原比例保留训练数据确保所有标签都在$D_T$中出现
+**如何采样**
 
-#### **四、怎么用？**
+1. random sampling 随机采样，在非常不幸的情况下，训练集正好没有囊括所有的标签，训练中缺失的标签永远不会被作为预测结果
+2. ***(推荐)*** stratified sampling, 按原比例保留训练数据确保所有标签都在$D_T$中出现
+
+##### （四）、二元分类质量评估** Performance evaluation
+
+$$
+\begin{array}{c|ll}\text{预测\实际}&y=1&y=0\\y=1&TP&FP\\y=0&FN&TN\end{array}
+$$
+
+* 准确度acc=$\frac{TP+TN}{ALL}$
+
+* 精确度prec=$\frac{TP}{TP+FP}$==acc与prec一般负相关==
+
+* 敏感度rec=$\frac{TP}{TP+NF}$
+
+####　二、KNN用途
+
 1. **分类**
 
    * 无加权，即比较周围k个最近数据的类型，取最常见的类
 
    * 加权，距离越远权重越低，$Z=\sum\frac{1}{d(x,x_i)}$为归一化常数，若只是预测类型则不用管Z
 
-2. **回归**（当$y_i$为数字而非标签）$\hat y=\frac1Z\sum_{i\in N_i}\frac1{d(x,x_i)}y_i $
+2. **回归**（当$y_i$为数字而非标签）
+   $$
+   \hat y=\frac1Z\sum_{i\in N_i}\frac1{d(x,x_i)}y_i
+   $$
 
-#### **五、二元分类质量评估** Performance evaluation
-$$
-\begin{array}{c|ll}
-\text{预测\实际}&y=1&y=0\\
-y=1&TP&FP\\
-y=0&FN&TN
-\end{array}
-$$
-* 准确度acc=$\frac{TP+TN}{ALL}$
+**k-NN弊端**
 
-* 精确度prec=$\frac{TP}{TP+FP}$
-
-  ==acc与prec一般负相关==
-* 敏感度rec=$\frac{TP}{TP+NF}$
-
-
-#### **六、k-NN弊端**
 * 维数多时，出现Empty-space Problem
 
-==每增加一个维度，可能的数据空间呈指数级上涨，而训练数据增长没那么快$\to$新数据离训练数据太远==
+> 每增加一个维度，可能的数据空间呈指数级上涨，而训练数据增长没那么快$\to$新数据离训练数据太远
 
 * 内存memory消耗，检查时间inference时间复杂性均为Order(N)，即随着数据量线性增加
-* 需要注意不平衡的类别imbalanced classes， 当一个种类占据数据集多数时，预测结果往往会一直是这个类
+* 需要注意不平衡的类别imbalanced classes， 当==一个种类占据数据集多数时，预测结果往往会一直是这个类==
 
 ## 决策树 Decision tree
 <img src="img/0_0dN6d8THyImxwPeD.png" style="zoom:50%;" />
@@ -87,115 +93,143 @@ $$
 * inner nodes：判断指标
 * leaf nodes：判断结果
 
-#### **一、优化决策树**
-若依照每个特征的每个值，划分会非常零碎而且繁琐。光root node就有D(N-1)种，组合太多   
-**解决方案:** greedy heuristic, 寻找干净利落切分的最好方式 **指标:** i(t)描述在t节点某类别的纯度
+#### 一、不纯净度 (impurity measure)
 
-1. **误捡率 Misclassification rate**
-$$i_E(t)=1- \max_{c}p(y_{\in c}|t)$$，即1-主要类别
-砍一刀后，增益为$\Delta i(s,t)=i(t)-p_Li(t_L)-p_Ri(t_R)$
->**存在问题**:
->
->1. 一旦没有增益就会停止
->2. 对不同分类可能有相同增益
-2. **香农熵 Shannon Entropy**
-对离散X值，有$$\mathbb H=-\sum_i^np(X=x_i)log_2p(X=x_i)$$
-3. **Gini指数**
+指标$ i(t)$描述在$t$节点某类别$C$的（不）纯度，$\pi_{C_i}=p(y=c|t)$即$t$结点上分类到$C$的概率。
 $$
-\begin{equation} 
+\begin{array}{rl|l}
+1. &误拣率 Misclassification\ rate&i_E=1- \max_{c}\pi_{C_i}，即1-主要类别&对不同分类可能有相同增益
+
+\\\hline 2.&香农熵 Shannon\ Entropy&i_{\mathbb H}=-\sum_i^n[\pi_{C_i}\cdot\log_2\pi_{C_i}]&离散X值
+\\\hline 3.&Gini指数&\begin{equation} 
 \begin{split}
-i_G(t)&=\sum_{c_i\in t}\Pi_{c_i}(1-\Pi_{c_i})\\
-&=\sum \Pi_{c_i}-\sum \Pi_{c_i}^2\\
-&=1-\sum (\Pi c_i)^2
+i_G&=\sum_{c_i\in t}\pi_{c_i}(1-\pi_{c_i})
+=\sum \pi_{c_i}-\sum \pi_{c_i}^2\\
+&=1-\sum (\pi c_i)^2
 \end{split}
 \end{equation}
+\end{array}
 $$
+==所有的$i(t)$均是越低越好。==
 
-#### 二、决策树何时停止？
+>  信息熵：越高则越“混乱”，各类雨露均沾（e.g. 墨水在水中散开）；越低则越“秩序”（墨水还未散开）<img src="img/entropy.PNG" alt="entropy" style="zoom:50%;" />
 
-1. 某一枝纯净$i_e(t)=0 \to$ 但可能过拟合
+#### 二、优化决策树
+
+一次二叉分类后，纯净度增益为：$\Delta i(s,t)=\underbrace{i(t)}_{母结点纯净度}-[\underbrace{p_L}_{分类到左侧概率}\cdot \underbrace{i(t_L)}_{左侧纯净度}+p_R\cdot \underbrace{i(t_R)}_{右侧纯净度}]$
+
+根节点（不）纯净度设为$1$。==$\Delta i$越大则分类效果越好。==
+
+**何时停止分叉？**
+
+1. 某一枝纯净$i(t)=0 \to$ 但可能过拟合
 2. 达到最大深度
 3. 每一枝节点数量小于阈值$t_n$
 4. 分枝增益小于阈值$\Delta i(s,t) \lt t_{\Delta}$
 5. 验证集精确度acc足够
 
-
-
 ## 概率论
 
 #### 一、频率学派——最大似然估计MLE
 
-==$p(D|\theta)$ :观察到序列D，哪个$\theta$ 能让这个D出现的概率最大？==
+$p(D|\theta)$ :==观察到序列D，哪个$\theta$ 能让这个D出现的概率最大？==
 
-写出事件D的方程$f(\theta)$, 再求$\mathop{\arg\max}\limits_\theta f(\theta) = \mathop{\arg\max}\limits_\theta \bold{log} f(\theta)$
+写出事件D的方程$f(\theta)$, 再求$\mathop{\arg\max}\limits_\theta f(\theta) = \mathop{\arg\max}\limits_\theta \textcolor{red}{log} f(\theta)$
 
 **缺陷**：样本少时容易过拟合
+$$
+\begin{array}{r|l|l}
+&观察序列&MLE&
+\\\hline 二项分布&p(D|\theta)=\theta^{|T|}(1-\theta)^{|H|}		&\theta_{MLE}=\frac{|T|}{|T|+|H|}
+\\高斯分布（方差为1）&\underbrace
+{p(x|\mu)=\mathcal N(x|\mu,1)=\frac1{\sqrt{2\pi}}\cdot exp(-\frac12(x-\mu)^2)}
+_{p(D|\mu)=\prod_{i=1}^{n}\mathbb N(x_i|\mu,1)} 	&\mu_{MLE}=\frac{\sum_{i=1}^nx_i}n
+\end{array}
+$$
 
-| 观察序列                                                     | MLE                                 |
-| ------------------------------------------------------------ | ----------------------------------- |
-| 二项分布 <br />$p(D|\theta)=\theta^{|T|}(1-\theta)^{|H|}$    | $\theta_{MLE}=\frac{|T|}{|T|+|H|}$  |
-| 高斯分布（方差为1）<br />$p(x|\mu)=\mathcal N(x|\mu,1)=\frac1{\sqrt{2\pi}}\cdot exp(-\frac12(x-\mu)^2)$<br />$p(D|\mu)=\prod_{i=1}^{n}\mathbb N(x_i|\mu,1)$ | $\mu_{MLE}=\frac{\sum_{i=1}^nx_i}n$ |
 
 #### 二、贝叶斯派——观察+先验=后验MAP
 
-==$p(\theta|D)= \frac{p(D|\theta)\cdot p(\theta)}{p(D)} \propto p(D|\theta) \cdot p(\theta)$ : 引入前置分布**prior** $p(\theta)$，在样本数太少时也有比较好的估计==
+$p(\theta|D)= \frac{p(D|\theta)\cdot p(\theta)}{p(D)} \propto p(D|\theta) \cdot p(\theta)$ : ==引入前置分布**prior** $p(\theta)$，在样本数太少时也有比较好的估计==
 
-同样计算$\mathop{\arg\max}\limits_\theta \log [f(\theta)\cdot p(\theta)]$
+同样计算$\mathop{\arg\max}\limits_\theta \log [f(\theta)\cdot p(\theta)]$，找到最可能的序列D
 
 **缺陷**：由于乘法运算，先验$p(\theta)=0$ 处后验永远为0
 
-1. **如何选取$p(\theta)?$ **：选择和观察序列D公式形式上相同的，可以让后验与先验形式一致，简化计算
+##### （一）、如何选取$p(\theta)?$ 
 
-| 观察序列                                    | 共轭先验方程                                                 | 后验形式                                                     | MAP                                               |
-| :------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------- |
-| $p(D|\theta)=\theta^{|T|}(1-\theta)^{|H|}$  | $Beta(\theta|a,b)=\frac{\Gamma (a+b)}{\Gamma (a)\Gamma(b)}\theta^{a-1}(1-\theta)^{b-1}$ | $p(\theta|D)\propto \theta^{|T|+a-1}(1-\theta)^{|H|+b-1}$    | $\theta_{MAP}=\frac{|T|+a-1}{|H|+|T|+a+b-2}$      |
-| $p(D|\mu)=\prod_{i=1}^n\mathcal N(x|\mu,1)$ | $\mathcal N(\mu|0,\textcolor{Red}{\alpha}^{-1})=\sqrt{\frac{\alpha}{2\pi}}\cdot exp(-\frac\alpha2\mu^2)$ | $p(\mu|D,\alpha)\propto exp(-\frac{N+\alpha}2\mu^2+\sum_{i=1}^Nx_i\cdot \mu)$ | $\mu_{MAP}=\frac1{N+\alpha}\cdot \sum_{i=1}^Nx_i$ |
+选择和观察序列D公式形式上相同的，可以让后验与先验形式一致，简化计算
+$$
+\small
+\begin{array}{l|l|l|l}
+观察序列 &共轭先验方程 &后验形式 &MAP
+\\\hline p(D|\theta)=\theta^{|T|}(1-\theta)^{|H|} 
+&Beta(\theta|a,b)=\frac{\Gamma (a+b)}{\Gamma (a)\Gamma(b)}\theta^{a-1}(1-\theta)^{b-1}
+&p(\theta|D)\propto \theta^{|T|+a-1}(1-\theta)^{|H|+b-1}
+&\theta_{MAP}=\frac{|T|+a-1}{|H|+|T|+a+b-2}
+\\p(D|\mu)=\prod_{i=1}^n\mathcal N(x|\mu,1)
+&\mathcal N(\mu|0,\underbrace{\alpha^{-1}}_{\alpha为精度=\sigma^2})=\sqrt{\frac{\alpha}{2\pi}}\cdot exp(-\frac\alpha2\mu^2)
+&p(\mu|D,\alpha)\propto exp(-\frac{N+\alpha}2\mu^2+\sum_{i=1}^Nx_i\cdot \mu)
+&\mu_{MAP}=\frac1{N+\alpha}\cdot \sum_{i=1}^Nx_i
+\end{array}
+$$
+>  高斯分布后验证明：${\scriptstyle
+>   \begin{split}
+>   p(\mu|D,\alpha)=&\frac{p(D|\mu)\cdot p(\mu|\alpha)}{p(D|\alpha)}\propto p(D|\mu)\cdot p(\mu|\alpha) \\
+>   \propto &\left(\prod_{i=i}^Np(x_i|\mu)\right)\cdot p(\mu|\alpha)\\
+>   \propto &\left(\prod_{i=i}^N\mathcal N(x_i|\mu,1)\right)\cdot \mathcal N(\mu|0,\alpha^{-1})\\
+>   \propto & \left(\prod_{i=i}^N\frac1{\sqrt{2\pi}}exp(\frac12(x_i-\mu)^2) \right)\cdot \sqrt{\frac\alpha{2\pi}}exp(-\frac\alpha2\mu^2)\\
+>   \propto & \ exp\left(\sum_{i=1}^N[-\frac12(x_i-\mu)^2]-\frac\alpha2\mu^2\right)\\
+>   \propto & \ exp(-\frac12\sum x_i^2+\mu \sum x_i-\frac12\sum \mu^2-\frac\alpha2\mu^2)\\
+>   \propto&\ exp(\mu\sum x_i-\frac N2\mu^2-\frac\alpha2\mu^2)\\
+>   \propto& \ exp(-\frac{N+\alpha}2\mu^2+\sum x_i\cdot \mu)
+>   \end{split}
+>   }$
 
-* _$\alpha=\frac1{\sigma^2}$为精度_
-  $$
-  {\scriptstyle
-  \begin{split}
-  p(\mu|D,\alpha)=&\frac{p(D|\mu)\cdot p(\mu|\alpha)}{p(D|\alpha)}\propto p(D|\mu)\cdot p(\mu|\alpha) \\
-  \propto &\left(\prod_{i=i}^Np(x_i|\mu)\right)\cdot p(\mu|\alpha)\\
-  \propto &\left(\prod_{i=i}^N\mathcal N(x_i|\mu,1)\right)\cdot \mathcal N(\mu|0,\alpha^{-1})\\
-  \propto & \left(\prod_{i=i}^N\frac1{\sqrt{2\pi}}exp(\frac12(x_i-\mu)^2) \right)\cdot \sqrt{\frac\alpha{2\pi}}exp(-\frac\alpha2\mu^2)\\
-  \propto & \ exp\left(\sum_{i=1}^N[-\frac12(x_i-\mu)^2]-\frac\alpha2\mu^2\right)\\
-  \propto & \ exp(-\frac12\sum x_i^2+\mu \sum x_i-\frac12\sum \mu^2-\frac\alpha2\mu^2)\\
-  \propto&\ exp(\mu\sum x_i-\frac N2\mu^2-\frac\alpha2\mu^2)\\
-  \propto& \ exp(-\frac{N+\alpha}2\mu^2+\sum x_i\cdot \mu)
-  \end{split}
-  }
-  $$
-  
+##### （二）、全贝叶斯分布函数
 
-2. **全贝叶斯分布函数**
+求MAP时，只关注$\mathop{argmax}_{\theta}[\alpha\cdot p(D|\theta)\cdot p(\theta)]\propto \mathop{argmax}_{\theta}[p(D|\theta) \cdot p(\theta)]$，常数$\alpha$可以忽略
 
-找到归一化常数，使得$\int_0^1p(\theta|D)d\theta=1$，实际上先验方程选的好就一定能合并观察公式
+要求得真正的分布函数，必须找到归一化常数$\alpha $，使得$\int_0^1p(\theta|D)d\theta=1$。实际上先验方程选的好就一定能合并观察公式
+$$
+\begin{array}{c|c}
+观察序列&分布函数 
+\\\hline p(D|\theta)=\theta^{|T|}(1-\theta)^{|H}
+&p(\theta|D)=Beta(\theta|a+|T|,b+|H|)
+\\p(D|\mu)=\prod_{i=1}^n\mathbb N(x|\mu,1)
+&p(\mu|D)=\mathcal N(\mu|\frac1{N+\alpha}\sum_{i=1}^Nx_i,\frac1{N+\alpha})
 
-| 观察序列                                   | 分布函数                                                     |
-| ------------------------------------------ | ------------------------------------------------------------ |
-| $p(D|\theta)=\theta^{|T|}(1-\theta)^{|H}$  | $p(\theta|D)=Beta(\theta|a+|T|,b+|H|)$                       |
-| $p(D|\mu)=\prod_{i=1}^n\mathbb N(x|\mu,1)$ | $p(\mu|D)=\mathcal N(\mu|\frac1{N+\alpha}\sum_{i=1}^Nx_i,\frac1{N+\alpha})$ |
+\end{array}
+$$
 
-设分布函数为:$${\scriptstyle \begin{equation}
-\begin{split}
-\mathcal N(\mu|m,\beta^{-1})=&\sqrt{\frac\beta{2\pi}}\cdot exp(-\frac\beta2\cdot (\mu-m)^2)\\
-=&\sqrt{\frac\beta{2\pi}}\cdot exp(-\frac\beta2\mu^2+\beta\mu m-\frac\beta2m^2)\\
-\propto& exp(\textcolor{Red}{-\frac\beta2}\cdot \mu^2+\textcolor{Green}{\beta m}\cdot \mu)
-\end{split}
-\end{equation}}$$
+>  高斯分布分布函数证明：设分布函数为${\scriptstyle \begin{equation}
+> \begin{split}
+> \mathcal N(\mu|m,\beta^{-1})=&\sqrt{\frac\beta{2\pi}}\cdot exp(-\frac\beta2\cdot (\mu-m)^2)\\
+> =&\sqrt{\frac\beta{2\pi}}\cdot exp(-\frac\beta2\mu^2+\beta\mu m-\frac\beta2m^2)\\
+> \propto& exp(\textcolor{Red}{-\frac\beta2}\cdot \mu^2+\textcolor{Green}{\beta m}\cdot \mu)
+> \end{split}
+> \end{equation}}$
+>
+> 与后验形式${\scriptstyle p(\mu|D,\alpha)\propto exp(\textcolor{Red}{-\frac{N+\alpha}2}\mu^2+\textcolor{Green}{\sum_{i=1}^Nx_i}\cdot \mu)}$比较：$ {\scriptstyle \left\lbrace\begin{split}-\frac\beta2=&-\frac{N+\alpha}2\\\sum_{i=1}^N x_i=&\beta m\end{split}\right.\implies\left\lbrace\begin{split}\beta=&N+\alpha\\m=&\frac{\sum^N_{i=1}x_i}{N+\alpha}\end{split}\right. }$
 
-与后验形式${\scriptstyle p(\mu|D,\alpha)\propto exp(\textcolor{Red}{-\frac{N+\alpha}2}\mu^2+\textcolor{Green}{\sum_{i=1}^Nx_i}\cdot \mu)}$比较：
+#### 三、MLE、MAP的联系
 
-$$ {\scriptstyle \left\lbrace\begin{split}-\frac\beta2=&-\frac{N+\alpha}2\\\sum_{i=1}^N x_i=&\beta m\end{split}\right.\to\left\lbrace\begin{split}\beta=&N+\alpha\\m=&\frac{\sum^N_{i=1}x_i}{N+\alpha}\end{split}\right. }$$
+贝叶斯概率中所谓的先验（或前置分布），就是一种预设，可以是主观的（我认为新疆来的苹果更可能是红的），也可以是客观的（统计规律，一枚正常的硬币落地正反面概率应各为$\frac12 $）——但不论主观客观，归根结底都是笼统的统计结果（生活中我们看到新疆来的苹果的确红色的更多，日复一日形成了“主观认识”）。
 
-#### 三、预测
+在样本数量N偏少时，先验极大地影响最终（后验）概率。可以认为，当观察样本量稀少时，加上先验可以提供比较客观（基于统计学）的结果。（比如有出租车撞人，目击者声称肇事车是蓝色的，然而城市中出租车颜色绿色远多于蓝色，最后计算结果仍旧是肇事车为绿色的概率更大）。
 
-$$p(f|D,a,b)=\int_0^1p(f|\theta)\cdot p(\theta|D,a,b)d\theta$$
+先验的方差$\sigma$越大，则分布函数越“平”，提供的信息量越少，对观察结果的影响也越小甚至趋向MLE。
 
-对于MLE，MAP，$\theta$为一个固定的值；
+样本数量N越大，观察序列占得比重越高，先验逐渐失去权重（一枚灌铅的硬币不论怎么抛就是永远正面朝上，原先认为正反面各$\frac12$的预设就破产了）。MAP与MLE的差异也就越小直至0。
+
+#### 四、预测
+
+对于MLE，MAP，$\theta$为一个固定的值，新数据概率为$p(x_{new}|\theta)$；
 
 对于全贝叶斯分布，$\theta$ 在每一处均不同。
+$$
+p(f|D,a,b)=\int_0^1p(f|\theta)\cdot p(\theta|D,a,b)d\theta
+$$
 
 | 观察序列                                   | 全贝叶斯预测                                              |                          |
 | ------------------------------------------ | --------------------------------------------------------- | ------------------------ |
@@ -213,8 +247,6 @@ x=y+\mu\to \mathcal N(x|0+m,1+\beta^{-1})=&\mathcal N(x|m,1+\beta^{-1})
 \end{split}
 $$
 
-
-
 ## 线性回归
 
 #### 一、定义
@@ -228,13 +260,13 @@ $$
 \end{array}
 $$
 
-* _i代表第 i个x_
+>  i代表第 i个x
 
 #### 二、如何选取最佳w?
 
 **损失函数：**$E_{LS}(\bold w)=\frac12\sum_{i=1}^N(f_w(x_i)-y_i)^2$，最小平方和least square
 
-* _$\frac12$ 只是个系数，方便之后运算_
+>  $\frac12$ 只是个系数，方便之后运算
 
 **最佳系数向量:**
 $$
@@ -244,10 +276,11 @@ w^*=&\mathop{\arg\min}\limits_wE_{LS}(w)\\
 可多维，\bold x\in\mathbb R^{N\times D}=&\mathop{\arg\min}\limits_w\frac12(\bold X\bold w-\bold y)^T(\bold X\bold w-\bold y)
 \end{split}
 $$
-如何求解？
+如何求解？$\to$令梯度为0，类似求导：
 $$
 \begin{split}
-令梯度为0，类似求导：\nabla_WE_{LS}(\bold w)=&\bold X^T\bold X\bold w-\bold X^T\bold y=0\\
+\nabla_WE_{LS}(\bold w)=&\bold X^T\bold X\bold w-\bold X^T\bold y\doteq0
+\\
 \bold w^\star=&(\bold X^T \bold X)^{-1}\bold X^T\bold y\\
 \triangleq&x^\dagger,称为伪逆矩阵
 \end{split}
@@ -255,31 +288,32 @@ $$
 
 #### 三、非线性回归
 
-1. **一维**数据情况下可以用多项式polynominal来逼近非线性的数据比如sinx
+##### （一）、一维数据
+
+**一维**数据情况下可以用多项式polynominal来逼近非线性的数据比如sinx
 
 $f_w(x)=w_0+\sum_{j=1}^Mw_jx^j$，==对x做M次变换并乘以系数w再相加==
 
-* _此时对于x已经不是线性，但对于w仍为线性，依旧可以叫“线性”回归_
+> 此时对于x已经不是线性，但对于w仍为线性，依旧可以叫“线性”回归
 
-2. 多维情况下，更一般地，
+##### （二）、多维数据
 
-$$
-\begin{split}
-f_w(\bold x)=&w_0+\sum_{j=1}^Mw_j\phi_j\\
-（令\phi_0=1）=&\bold w^T\phi(\bold x)
-\end{split}
-$$
+多维情况下，更一般地，$\begin{split}
+f_w(\bold x)=w_0+\sum_{j=1}^Mw_j\phi_j
+\overbrace=^{（令\phi_0=1）}\bold w^T\phi(\bold x)
+\end{split}$，其中，$\phi_j为\mathbb R^D\to\mathbb R的函数,\phi(x)\in\mathbb R^{M+1}$
 
-
-
-，其中，$\phi_j为\mathbb R^D\to\mathbb R的函数,\phi(x)\in\mathbb R^{M+1}$
+损失函数为：
 $$
 \begin{split}
 E_{LS}=&\frac12\sum_{i=1}^N(\bold w^T\phi(\bold x_i)-y_i)^2\\
 =&\frac12(\bold\Phi\bold w-\bold y)^T(\bold\Phi\bold w-\bold y)
+
+\\
+\bold w^\star=&(\bold \Phi^T \bold \Phi)^{-1}\bold \Phi^T\bold y&与不添加\Phi(X)类似
 \end{split}
 $$
-其中，
+其中，$\Phi$称为设计矩阵Design Matrix，
 $$
 \Phi=
 \begin{pmatrix}
@@ -291,19 +325,36 @@ $$
 \in
 \mathbb R^{N\times(M+1)}
 $$
-称为设计矩阵Design Matrix，
+> 在一维线性回归中，$\Phi=[1,\bold x]$，$\phi_0=1,\phi_j=x$
 
-==在一维线性回归中，$\Phi=[1,\bold x]$==，$\phi_0=1,\phi_j=x$
+##### （三）、惩罚规则Regularization
 
 然而，当w系数过大时常导致过拟合（过度贴合数据中的噪音）$\to$引入惩罚规则
 $$
-E_{ridge}(w)=\frac12\sum^N(\bold w^T\phi(x_i)-y_i)^2+\frac\lambda{2}||w||_2^2
+\begin{split}
+E_{ridge}(w)&=\frac12\sum^N(\bold w^T\phi(x_i)-y_i)^2+\frac\lambda{2}||w||_2^2
+\\&=\frac12(\bold \Phi\bold w-\bold y)^T(\bold \Phi\bold w-\bold y)+\frac{\lambda}2\bold w^T\bold w
+\\
+\nabla_w E&=\bold \Phi^T\bold \Phi\bold w-\bold \Phi^T\bold y+\lambda\bold w \doteq0
+\\\therefore\bold w^\star&=(\bold \Phi^T \bold \Phi+\lambda\bold I)^{-1}\bold \Phi^T\bold y
+\end{split}
 $$
 
 * $||w||_2^2$：w各项平方和=$\bold w^T\bold w$
 
 * $\lambda$：惩罚力度
-* 通常选一个高维度的j，并用$\lambda$控制
+
+  > 通常选一个高维度的j（确保至少不会欠拟合），并用$\lambda$控制，防止过拟合
+
+##### （四）、线性回归模型评价
+
+Bias：模型与数据图形相似度。若模型维度太低，欠拟合则Bias高。
+
+Variance：预测值变化剧烈程度，过拟合时Variance高
+
+当且仅当模型临界拟合数据集时，Bias与Variance均低。
+
+<img src="img/lin.reg.bias&amp;var.PNG" alt="lin.reg.bias&amp;var" style="zoom:50%;" />
 
 #### 四、正态分布序列与线性回归的关联
 
@@ -318,22 +369,21 @@ $$
 
 $$
 \begin{split}
-\bold w_{ML},\beta_{ML}&=\mathop{\arg\max}\limits_{\bold w,\beta}p(\bold y|\bold X,\bold w,\beta)\\
+\bold w_{MLE},\beta_{MLE}&=\mathop{\arg\max}\limits_{\bold w,\beta}p(\bold y|\bold X,\bold w,\beta)\\
 &=\mathop{\arg\min}\limits_{\bold w,\beta}-ln\ p(\bold y|\bold X,\bold w,\beta)\\
-=\mathop{\arg\min}\limits_{\bold w,\beta}&-ln\ \left[\prod_i\mathcal N(y_i|f_w(\bold x_i),\beta^{-1}) \right]\\
-&=-\sum_iln\left[\sqrt{\frac\beta{2\pi}}exp(-\frac\beta2(\bold w^T\phi(\bold x_i)-y_i)^2 
+&=\mathop{\arg\min}\limits_{\bold w,\beta}-ln\ \left[\prod_i\mathcal N(y_i|f_w(\bold x_i),\beta^{-1}) \right]\\
+&=\mathop{\arg\min}\limits_{\bold w,\beta}-\sum_iln\left[\sqrt{\frac\beta{2\pi}}exp(-\frac\beta2(\bold w^T\phi(\bold x_i)-y_i)^2 
 \right]\\
-&=\frac\beta2\sum_i(\bold w^T\phi(\bold x_i)-y_i)^2-\frac N2ln\beta+\frac N2ln2\pi\\
+&=\mathop{\arg\min}\limits_{\bold w,\beta}\frac\beta2\sum_i(\bold w^T\phi(\bold x_i)-y_i)^2-\frac N2ln\beta+\frac N2ln2\pi\\
 \end{split}
 $$
 
-==解w的MLE恰好就是线性回归的损失函数==
 $$
-\bold w_{MLE}=\mathop{\arg\min}\limits_{\bold w}\frac12\sum_i(\bold w^T\phi(\bold x_i)-y_i)^2\\
-$$
-
-$$
+\begin{array}{l|l}
+\bold w_{MLE}=\mathop{\arg\min}\limits_{\bold w}\frac12\sum_i(\bold w^T\phi(\bold x_i)-y_i)^2&\textcolor{blue}{解w_{MLE}恰好就是线性回归的损失函数}
+\\
 \beta_{MLE}=\mathop{\arg\min}\limits_{\beta}\frac\beta2\sum_i(\bold w^T\phi(\bold x_i)-y_i)^2-\frac N2ln\beta
+\end{array}
 $$
 
 ##### （二）、MAP
@@ -343,6 +393,31 @@ $$
 p(\bold w|\bold X,\bold y,\beta,\alpha)\propto p(\bold y|\bold X,\bold w,\beta)\cdot p(\bold w|\alpha)
 $$
 
+给$\bold w$加一个先验$p(\bold w|\alpha)=\mathcal N(\bold w|\bold 0,\alpha^{-1}\bold I)=(\frac{\alpha}{2\pi})^{\frac M2}\exp(-\frac\alpha2\bold w^T\bold w)$，均值为0（中心化），各维度方差相同
+
+$\beta$不加先验，仍是一个定值
+$$
+\begin{split}
+\bold w_{MAP}=&\mathop{\arg\max}_{\bold w}p(\bold w|\bold X,\bold y,\alpha,\beta)=\mathop{\arg\max}_{\bold w}\frac{p(\bold y|\bold X,\bold w,\beta)\cdot p(\bold w|\alpha)}{p(\bold X,\bold y)}
+\\
+=&\mathop{\arg\max}_{\bold w}\ln p(\bold y|\bold X,\bold w,\beta)+\ln p(\bold w|\alpha)\underbrace{-\ln p(\bold X,\bold y)}_{常数}
+\\
+=&\mathop{\arg\min}_{\bold w}-\left[\ln p(\bold y|\bold X,\bold w,\beta)+\ln p(\bold w|\alpha)\right]
+\\
+=&\mathop{\arg\min}_{\bold w}\textcolor{blue}{\frac\beta2\sum_i(\bold w^T\phi(\bold x_i)-y_i)^2}-\frac N2ln\beta+\frac N2ln2\pi&-\ln(\frac\alpha{2\pi})^{\frac M2}+\textcolor{red}{\frac\alpha2\bold w^T\bold w}
+\\=&\mathop{\arg\min}_{\bold w}\textcolor{blue}{\frac\beta2\sum_i(\bold w^T\phi(\bold x_i)-y_i)^2}+\textcolor{red}{\frac\alpha2\bold w^T\bold w}
+\\=&\mathop{\arg\min}_{\bold w}\frac12\sum_i(\bold w^T\phi(\bold x_i)-y_i)^2+\frac\lambda2||\bold w||^2_2
+\end{split}
+$$
+因此高斯分布加上一个对$\bold w$的先验（$\bold w$ 均值为0，各向同性），$w_{MAP}$既是使序列出现概率最大，也使带Ridge的线性回归损失函数最小。$\lambda=\frac\alpha\beta=\frac{先验的方差倒数}{数据分布的方差倒数}$，即线性回归中加一个惩罚项$\lambda$就是在序列上加一个先验$p(w)$
+
+##### （三）、Sequential 贝叶斯线性回归
+
+如果数据$D_2,D_1$不能同时获得，我们可以计算
+
+$\textcolor{brown}{p(\bold w|D_2,D_1)}\propto p(D_2|\bold w)p(D_1|\bold w)p(\bold w|\alpha)\propto p(D_2|\bold w)\cdot \textcolor{brown}{p(\bold w|D_1)}$
+
+即有先验$p(\bold w|\alpha)$后，先计算$\bold w$对$D_1$的后验$p(\bold w|D_1)$。获得$D_2$数据后，将对$D_1$的后验作为此时的先验，计算$p(D_2|\bold w)\cdot p(\bold w|D_1)$，等于$\bold w$对$D_2,D_1$的后验。
 
 ## 线性分类
 
@@ -352,7 +427,7 @@ $$
 $$
 l_{01}(y,\hat y)=\sum_{i=1}^N \mathbb I(\hat y \neq y_i)
 $$
-perception函数用于二元分类
+硬边界二元分类——perception函数：
 $$
 y=\begin{cases}
 1, when\ \bold \omega^T\bold x+\omega_0 \ \gt0 \\
@@ -389,7 +464,7 @@ $$
    即\ y|\bold x &\sim Bernoulli(\sigma(\bold w^T\bold x+w_0))
    \end{split}
    $$
-   其中，$\alpha = ln\frac{p(\bold x|y=1)p(y=1)}{p(\bold x|y=0)p(y=0)}\\=\bold w^T\bold x+w_0 是一个线性分割$
+   其中，$\alpha = ln\frac{p(\bold x|y=1)p(y=1)}{p(\bold x|y=0)p(y=0)}\to(一通数学运算)=\bold w^T\bold x+w_0 是一个线性分割$，$\bold w=\bold \Sigma^{-1}(\mu_1-\mu_0)$
 
    当$\alpha\gt0$时，标签判定为1
 
@@ -402,7 +477,9 @@ $$
    \end{split}
    $$
 
-* softmax输出一个向量，各元素为各类别的概率，比如$p_i=\begin{bmatrix}0.8\\0.1\\0.1\end{bmatrix}$
+> softmax输出一个向量，各元素为各类别的概率，比如$p_i=\begin{bmatrix}0.8\\0.1\\0.1\end{bmatrix}$
+
+==LDA生成线性的分类边界==
 
 ##### (二)、naive 贝叶斯
 
@@ -410,23 +487,27 @@ $$
 
 <img src=".\img\5-2.PNG" style="zoom:67%;" />
 
-为了简化运算，假设$\bold x=(x_0,x_1,\cdots,x_n)$互相独立，当x的概率正态分布时，$\Sigma$为对角阵
+为了==简化运算==，假设$\bold x=(x_0,x_1,\cdots,x_n)$互相独立，当x的概率正态分布时，==$\Sigma$为对角阵==（特征间不能有关联）
 $$
 p(x_1,x_2,\cdots,x_d|y=c)=\prod_{i=1}^Np(x_i|y=c)\\
 p(\bold x|y=c)=\mathcal N(\bold x|\bold \mu_c,\bold \Sigma_c)
 $$
 
-* _独立$\Sigma$好处：可以更容易处理不同的分布，以及不同的数据类型_
+> 独立$\Sigma$好处：可以更容易处理不同的分布，以及不同的数据类型
 
-#### 三、discrimitive model 或逻辑回归
+==Naive贝叶斯生成方形的分类边界==
+
+#### 三、discrimitive model 或Logistic regression逻辑回归
 
 generative model 生成模型 不能自主选择$\bold w$与$w_0$，而是由数据决定 （好处是可以生成新的数据，在数据缺失时比较有用）
 
-**discrimitive 区分模型**：直接给$y|\bold x\sim Bern(\sigma(\bold w^T\bold x+w_0))$ 建模，自由选择$\bold w$与$w_0$
+##### （一）、区分模型推导
+
+直接给$y|\bold x\sim Bern(\sigma(\bold w^T\bold x+w_0))$ 建模，自由选择$\bold w$与$w_0$（概率模型，==可以有错分==）
 $$
 \begin{split}
 p(\bold y|\bold w,\bold X)&=\prod_{i=1}^Np(y_i|\bold x_i,\bold w)\\
-(二元分类)&=\prod_ip(y_i|\bold x_i,\bold w)^{y_i}\cdot(1-p(y_i|\bold x_i,\bold w)^{1-y_i})
+(二元分类)&=\prod_i\underbrace{p(\hat y=1|\bold x_i,\bold w)^{y_i}}_{\hat y_i=1的概率，y_i=0时为1消失}\cdot\underbrace{(1-p(\hat y =1|\bold x_i,\bold w)^{1-y_i}}_{\hat y_i=0的概率，y_i=1时消失})
 \end{split}
 $$
 **损失函数：**负对数概率，即cross entrophy
@@ -434,32 +515,56 @@ $$
 \begin{split}
 E(\bold w)&=-ln\ p(\bold y|\bold w,\bold X)\\
 （二元） &=-\sum_{i=i}^N\left[y_iln\sigma(\bold w^T\bold x_i)+(1-y_i)ln(1-\sigma(\bold w^T \bold x_i))\right]\\
-（多元） &=-\sum_i^N\sum_c^Cy_{ic}ln\frac{exp(\bold w_c^T\bold x)}{\sum_{ci}exp(\bold w_{ci}^T\bold x)}=-\sum_iln\ \hat p_{ik(i)} \\
+（多元） &=-\sum_i^N\sum_c^Cy_{ic}ln\frac{exp(\bold w_c^T\bold x)}{\sum_{ci}exp(\bold w_{ci}^T\bold x)}\\&=-\sum_iln\ \underbrace{\hat p_{ik(i)}}_{正确类概率} \\
 &=-\sum_i\ ln\ softmax(\bold W\cdot \bold x_i)\\
 &即只将正确的分类的概率相加\\
 \bold w^*&=\mathop{\arg\min}\limits_{w}E(\bold w)
 \end{split}
 $$
 
+##### （二）、一个小问题
+
+由于逻辑回归中$\bold w$（假设包含$w_0$）是自己训练出来的，因此可能过拟合。
+
+回顾损失函数$E=-\sum_{i=i}^N\left[y_iln\sigma(\bold w^T\bold x_i)+(1-y_i)ln(1-\sigma(\bold w^T \bold x_i))\right]$，为了使E尽可能小，$y_i\ln\sigma(\bold{w^Tx_i})$要尽可能大$\to\bold{w^Tx_1}$要最大，才能取到sigmoild函数最大值1$\to\bold w$要趋向$+\infty$。$\bold w=+\infty$意味着sigmoid函数退化成阶跃函数。可能导致过拟合？一般加一个L2惩罚项防止$\bold w$取值过大。
+
+<img src="img/Sigmoid.PNG" alt="Sigmoid" style="zoom:50%;" />
+
 ## 优化
 
 #### 一、数学基础——凸集
 
-convex set: 
+##### (一)、定义
+
+凸集convex set: 凸集中任意两点连线上的点仍在凸集内
 $$
 对于x,y \in \bold X, 有\lambda\in[0,1],使得\lambda x+(1-\lambda)y\in\bold X
 $$
 <img src=".\img\6-1.PNG" alt="6-1" style="zoom:50%;" />
 
-convex function:
+凸集的顶点vertex：$\lambda x+(1-\lambda)y\notin X,\lambda\gt1$，若凸集内任意点与x的连线延伸线不再属于X，则x是凸集的顶点。
+
+凸函数convex function: 
 $$
-\lambda f(x)+(1-\lambda)f(y)\ge f(\lambda x+(1-\lambda)y)
+\begin{array}{r|c}
+抽象函数： &\lambda f(x_1)+(1-\lambda)f(x_2)\ge f(\lambda x_1+(1-\lambda)x_2)\triangleq f(x_\lambda)
+&或写作f(\bold y)-f(\bold x)\ge(\bold{y-x})^T\nabla f(\bold x)
+\\解析式函数：&\frac{d^2f(x)}{dx^2}\ge0&或\nabla^2f(\bold x)为半正定
+\end{array}
 $$
 
-* 凸集没有多个极值，唯一的极值就是最值
-* 凸集的最大值一定在某个顶点上，即 $\bold x^*\in Ve\{\bold X\}$
-* 凸集若缺失一块，可以先补成凸集，最大值在填补上的凸集某个顶点上，即 $\bold x^*\in Ve\{Conv\{\bold X\} \}$
-* 在凸集中找到导数为0处，就是最值（方便求最小值问题）
+* 凸函数没有多个极小值，唯一的极小值就是最小值，在导数为0处（方便求最小值问题）
+* ==凸函数的最大值一定在凸集某个顶点上==，即 $\bold x^*\in Ve\{\bold X\}$
+* 凸集若缺失一块，可以先补成凸集，凸函数最大值在填补上的凸集某个顶点上，即 $\bold x^*\in Ve\{Conv\{\bold X\} \}$
+
+##### （二）、凸函数传递性质
+
+* $h(\bold x)=f_1(\bold x)+f_2(\bold x)$，若$f_1,f_2$为凸，则$h$也为凸
+* $h(\bold x)=\max\{f_1,f_2\}$
+* $h=c\cdot f_1,c\ge0$
+* $h=c\cdot g(\bold x),c\le0$，$g(\bold x)$为凹函数
+* $h=f_1(\bold{Ax+b})$，线性变化后仍为凸
+* $h=m(f_1)$，当且仅当函数m是单调增凸函数
 
 #### 二、迭代寻找导数为0点
 
@@ -479,51 +584,24 @@ $$
 
 所以 $\delta=-\nabla f(\theta_t)\left[\nabla^2 f(\theta_t) \right]^{-1}$ 为一次迭代的变化量
 
-$\theta_{t+1}\leftarrow\theta_t+\delta=\theta_t-\left[\nabla^2 f(\theta_t) \right]^{-1}\cdot\nabla f(\theta_t)$
+$\theta_{t+1}\leftarrow\theta_t+\delta=\theta_t-\left[\nabla^2 f(\theta_t) \right]^{-1}\cdot\nabla f(\theta_t)$，直到收敛
 
-直到
-
-* 求逆矩阵计算量巨大，牛顿法一般只用于低维度数据
+> 求逆矩阵计算量巨大，牛顿法一般只用于低维度数据
 
 ##### （二）、梯度下降 Gradient descent
 
-**通用方法：Exact Line Search**
-
-1. $\Delta\overrightarrow\theta=-\nabla f(\overrightarrow \theta)$
-
-2. $t=\mathop{argmin}\limits_{t\gt0}f(\overrightarrow\theta+t\cdot\overrightarrow\theta)$ 
-   *  找梯度方向最小值，比较慢
-
-3. $\overrightarrow\theta=\overrightarrow\theta+t\cdot\Delta\overrightarrow\theta$
-
-**变种一：Backtracking**
-
-依然$\overrightarrow\theta=\overrightarrow\theta+t\cdot\Delta\overrightarrow\theta$， 但t的选取不同
-
-有 $\beta\in(0,1)，\alpha\in(0,\frac12)$，
-
-从$t_0=1$开始，令$t_{i+1}=\beta\cdot t_i$, 不断缩小$\beta$，直到
-
-$f(\bold x+t\cdot\Delta\bold x)\lt f(\bold x)+t\cdot\alpha\cdot\nabla f(\bold x)^T\Delta\bold x$
-
-<img src=".\img\6-2.PNG" alt="6-2" style="zoom:50%;" />
-
-* 原理：若$f(x+t\Delta x)$比$f(x)+t\alpha\nabla f(x)^T\Delta x$ 高，那么在其下方一定有更好的另一个解
-
-**变种二：直接选取t**
-
-$\theta_{t+1}\leftarrow\theta_t-\tau\cdot\nabla f(\theta_t)$
-
-$\tau$ 称为学习率
-
-* $\tau$ 太大，一下子越过目标
-* $\tau$ 太小，太慢；还可能在鞍点上卡住（非凸函数）
+| 通用方法：Exact Line Search                                  | 变种一：Backtracking                                         | 变种二：直接选取t                                            |
+| ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| 1. $\Delta\overrightarrow\theta=-\nabla f(\overrightarrow \theta)$ | 依然$\overrightarrow\theta=\overrightarrow\theta+t\cdot\Delta\overrightarrow\theta$， 但t的选取不同， | $\theta_{t+1}\leftarrow\theta_t-\tau\cdot\nabla f(\theta_t)$,$\tau$ 称为学习率 |
+| 2. $t=\mathop{argmin}\limits_{t\gt0}f(\overrightarrow\theta+t\cdot\overrightarrow\theta)$找梯度方向最小值，比较慢 | 有 $\beta\in(0,1)，\alpha\in(0,\frac12)$，从$t_0=1$开始，令$t_{i+1}=\beta\cdot t_i$, 不断缩小$\beta$，直到$f(\bold x+t\cdot\Delta\bold x)\lt f(\bold x)+t\cdot\alpha\cdot\nabla f(\bold x)^T\Delta\bold x$ | $\tau$ 太大，一下子越过目标 $\tau$ 太小，太慢；还可能在鞍点上卡住（非凸函数） |
+| 3. $\overrightarrow\theta=\overrightarrow\theta+t\cdot\Delta\overrightarrow\theta$ | 原理：若$f(x+t\Delta x)$比$f(x)+t\alpha\nabla f(x)^T\Delta x$ 高，那么在其下方一定有更好的另一个解 |                                                              |
+|                                                              | <img src=".\img\6-2.PNG" alt="6-2" style="zoom:50%;" />      |                                                              |
 
 ##### （三）、随机梯度下降 Stochastic GD
 
 针对大数据集，计算最小化$\sum_i^nLoss_i(\theta)$ 特别慢
 
-理想情况下，数据集的一部分能反映整体，所以有：
+理想情况下，数据集的一部分s个样本能反映整体n个样本的特征，所以有：
 $$
 \frac1n\sum_i^nL_i(\theta_i)\approx\frac1{|s|}\sum_{i\in S}L_i(\theta_i)\\
 即 \sum_i^nL_i(\theta_i)\approx\frac n{|s|}\sum_{j\in S}L_j(\theta_j)
@@ -532,7 +610,7 @@ $\theta_{t+1}\leftarrow \theta_t-\tau\cdot\frac n{|s|}\cdot\sum_{j\in S}\nabla L
 
 
 
-#### 三、应用实例perception 函数
+#### 三、随机梯度下降应用——perception 函数
 
 
 $$
@@ -541,26 +619,25 @@ y_i=\begin{cases}
 \\-1,&else
 \end{cases}
 $$
-目标
-$$
-\mathop{min}\limits_{\bold w,b}\sum_iLoss(y_i,\bold w^T\bold x_i+b)
-$$
-损失函数
-$$
-Loss=max(0,\epsilon-u\cdot v)
-$$
-其中$u=y_i,v=\bold w^T\bold x_i+b$ , 
+目标$\mathop{min}\limits_{\bold w,b}\sum_iLoss(\underbrace{y_i}_{u\triangleq y_i},\underbrace{\bold w^T\bold x_i+b}_{v\triangleq \bold w^T\bold x_i+b})$，其中$u\cdot v=y_i(\bold w^T\bold x_i+b)$ , 
 
-同时$\epsilon$ 是一个预设的距离，为正数
+损失函数$Loss=max(0,\epsilon-u\cdot v)$，==$\epsilon$ 是一个预设的距离，为正数==
 
 <img src=".\img\6-3.PNG" alt="6-3" style="zoom: 33%;" />
-
-| 在错误一侧                   | $uv\lt0$             | $\epsilon-uv\gt0$ |
-| ---------------------------- | -------------------- | ----------------- |
-| 在正确一侧但是离分界线太近   | $0\lt uv\lt\epsilon$ | $\epsilon-uv\gt0$ |
-| 在正确一侧并且离分界线足够远 |                      | 0                 |
+$$
+\begin{array}{}
+&&Loss
+\\\hline
+在错误一侧	&	uv\lt0\lt\epsilon	&	\epsilon-uv\gt0
+\\
+在正确一侧但是离分界线太近	&0\lt uv\lt\epsilon	&\epsilon-uv\gt0
+\\
+在正确一侧并且离分界线足够远	&uv\gt\epsilon&0
+\end{array}
+$$
 
 $$
+\begin{array}{}
 \nabla_wmax(0,y_i(\bold w^T\bold x_i+b))=
 \begin{cases}
 -y_i\cdot \bold x_i, &if\ uv\lt\epsilon
@@ -570,11 +647,12 @@ $$
 -y_i, &uv\lt\epsilon
 \\0,&uv\ge\epsilon
 \end{cases}
+\end{array}
 $$
 
-当n为训练数据样本量，|s|=1，
+设n为训练数据样本量，取|s|=1（每次更新只选一个点作为数据集），
 
-只要有分类不正确，就更新w与b，直到分类完全正确
+只要有分类不正确，就更新w与b，直到分类完全正确，==不允许有错分==
 $$
 \bold w\leftarrow\bold w+\tau\cdot n\cdot y_i\cdot \bold x_i
 \\\bold b\leftarrow \bold b+\tau\cdot n\cdot y_i
@@ -594,7 +672,7 @@ $$
 
 ## 约束优化
 
-#### 一、投影
+#### 一、投影+梯度下降
 
 梯度下降不能用于求约束优化，因为可能会跳出允许的参数域范围$\rightarrow$ 只能将取得的新值投影到参数域
 
@@ -658,11 +736,9 @@ $$
 
 真正的受约束最小值记为$p^\star$
 
-
-
 在Slater`s constraint qualification ==充分非必要==条件下，$\exist\alpha, 使得\ d^*=p^*$
 
-1. $f_i$ 均为convex
+1. $f_i$ 均为convex，并且……
 
 2. 有一处$\overrightarrow \theta$ ，
 
@@ -705,17 +781,26 @@ $即margin=\frac{2}{||\bold w||}=\frac2{\bold w^T\bold w}$
 $$
 y_i(\bold w^T\bold x+b)-1\ge0
 $$
-拉格朗日优化问题即转为：
+因此优化问题为:
 $$
-L=\frac12\bold w^T\bold w+\sum_ia_i\left[1-y_i(\bold w^T\bold x+b)\right]
-\\\begin{split}
-&1.\nabla_{\bold w}L(\bold w,b,\overrightarrow\alpha)=\bold w-\sum_i\alpha_iy_i\bold x_i\doteq0
-\\&2.\nabla_bL=\sum_i\alpha_iy_i\doteq0
+\begin{split}
+f_0=&\frac12\bold w^T\bold w
+\\
+约束f_i=&1-y_i(\bold w^T\bold x+b)\le0
 \end{split}
 $$
-$\therefore \bold w最优值\bold w^*_{\overrightarrow\alpha}=\sum_i\alpha_iy_i\bold x_i$ ，是标签值与数据值的线性组合
-
-将$\bold w$代回，
+拉格朗日优化问题即转为：
+$$
+L(\bold w,b)=\frac12\bold w^T\bold w+\sum_ia_i\left[1-y_i(\bold w^T\bold x+b)\right]
+$$
+求导得：
+$$
+\begin{split}
+&\nabla_{\bold w}L(\bold w,b,\overrightarrow\alpha)=\bold w-\sum_i\alpha_iy_i\bold x_i\doteq0
+\\&\nabla_bL=\sum_i\alpha_iy_i\doteq0
+\end{split}
+$$
+$\therefore \bold w最优值\bold w^*_{\overrightarrow\alpha}=\sum_i\alpha_iy_i\bold x_i$ ，是标签值与数据值的线性组合，将$\bold w$代回，得L无约束最小值
 $$
 L=
 \scriptsize
@@ -744,19 +829,20 @@ L=
 $$
 
 
-拉格朗日此时可以写作dual problem
+dual problem：最大化拉格朗日无约束最小值
 $$
 \begin{array}{}
 最大化g(\overrightarrow\alpha)=\sum_i\alpha_i-\frac12\sum_i\sum_jy_iy_j\alpha_i\alpha_j\bold x_i^T\bold x_j
-\\1.\sum_i\alpha_iy_i=0
+\\约束\begin{cases}1.\sum_i\alpha_iy_i=0
 \\2.\alpha_i\ge0
+\end{cases}
 \end{array}
 $$
 矩阵形式即为：
 $$
 \begin{array}{}
 最大化g(\overrightarrow\alpha)=\frac12\overrightarrow\alpha^T\bold Q\overrightarrow\alpha+\overrightarrow\alpha^T\bold 1_N
-\\其中,\bold Q=-(\bold y\odot\bold X)\cdot(\bold y\odot\bold X)^T
+\\其中,\bold Q=-(\bold y\odot\bold X)\cdot(\bold y\odot\bold X)^T=-\bold y\bold y^T\odot\bold X\bold X^T
 \end{array}
 $$
 由上一章KKT slackness推论：
@@ -792,24 +878,36 @@ $$
 $$
 \begin{array}{}
 f_0=\frac12\bold w^T\bold w+C\cdot \sum_i\xi_i
-\\
+\\约束\begin{cases}
 1.y_i(\bold w^T\bold x+b)-1+\xi_i\ge0
 \\
 2.\xi_i\ge0
+\end{cases}
 \end{array}
 $$
-**常数C的作用**：$C\to\infty 容忍误差为0，当于硬边界；C\to0相当于误差范围无限大，没有意义$
+**常数C的作用**：$C\to\infty$ 容忍误差为0，当于硬边界； $C\to0$相当于误差范围无限大，没有意义
 
-$\frac{\partial L}{\partial\xi_i}=C-\alpha_i-\mu_i\doteq0$
-
-$\therefore \alpha_i=C-\mu_i\in[0,C]$
-
+拉格朗日为：
+$$
+\begin{split}
+L(\bold w,b,\bold \xi)&=\frac12\bold w^T\bold w+C\cdot\sum_i\xi_i\\&+\sum_i\alpha_i[1-\xi_i-y_i(\bold w^T\bold x+b)]\\&+\sum_i\mu_i(-\xi_i)
+\end{split}
+$$
+求导得：
+$$
+\begin{split}
+&\nabla_{\bold w}L(\bold w,b,\overrightarrow\alpha)=\bold w-\sum_i\alpha_iy_i\bold x_i\doteq0
+\\&\nabla_bL=\sum_i\alpha_iy_i\doteq0
+\\
+&\frac{\partial L}{\partial\xi_i}=C-\alpha_i-\mu_i\doteq0\implies\therefore \alpha_i=C-\mu_i\in[0,C]
+\end{split}
+$$
 拉格朗日即转为：
 $$
 \begin{array}{}
 最大化g(\overrightarrow\alpha)=\sum_i\alpha_i-\frac12\sum_i\sum_jy_iy_j\alpha_i\alpha_j\bold x_i^T\bold x_j
-\\1.\sum_i\alpha_iy_i=0
-\\2.0\le\alpha_i\textcolor{red}{\le C}
+\\约束\begin{cases}1.\sum_i\alpha_iy_i=0
+\\2.0\le\alpha_i\textcolor{red}{\le C}\end{cases}
 \end{array}
 $$
 但实际上，有更简单的方法
@@ -837,10 +935,76 @@ $$
 $$
 $\therefore$ 原问题转为无约束问题
 $$
-\min\ \frac12\bold w^T\bold w+C\cdot\sum_imax\left\{0,1-y_i(\bold w^T\bold x+b)\right\}
+\min\ \frac12\bold w^T\bold w+C\cdot\underbrace{\sum_imax\left\{0,1-y_i(\bold w^T\bold x+b)\right\}}_{\epsilon = 1的perception 函数}
 $$
 
 > 模糊SVM损失函数后半段 $\sum_imax\left\{0,1-y_i(\bold w^T\bold x+b)\right\}$ 实际是预设距离 $\epsilon = 1 $的perception 函数， 然而SVM在此基础上还要让空白区间最大($\frac12\bold w^T\bold w$) ，因此是进化版
+
+#### 三、软边界SVM与逻辑回归的关联
+
+SVM是典型的二分类器，而逻辑回归可二元分类，也可多元分类。因此必须把问题限定在二分类。
+
+在之前的章节中，逻辑回归（二元）两个标签为{1,0}，因此损失函数推导过程为
+$$
+\begin{split}
+p(y_i=0)=&1-\sigma(\bold{w^Tx_i}+b)
+\\p(y_i=1)=&\sigma(\bold {w^Tx}_i+b)
+\\\therefore p(\bold y)=&\prod_i\sigma(\bold {w^Tx}_i+b)^{y_i}\cdot(1-\sigma(\bold w^T\bold x_i+b))^{(1-y_i)}
+\\E=-\ln p(y)=&-\sum_iy_i\cdot\ln\sigma(\bold w^Tx_i+b)+(1-y_i)\ln[1-\sigma(\bold w^Tx_i+b)]
+\end{split}
+$$
+如果标签像SVM一样设为{1,-1}，则损失函数可以写成比较简单的形式
+$$
+\begin{split}
+p(y=-1)=&1-\sigma(\bold{w^Tx_i}+b)=\sigma(-(\bold{w^Tx_i}+b))
+\\p(y_i=1)=&\sigma(\bold{w^Tx_i}+b)
+\\p(\bold y)=&\prod_i\sigma(y_i(\bold{w^Tx}+b))=\frac1{1+y_i(\bold{w^Tx}+b)}
+\\E=-\ln p(y)=&-\sum_i-\ln(1+e^{-y_i(\bold w^Tx_i+b)})=\sum_i\ln(1+e^{-y_i(\bold w^Tx_i+b)})
+
+\end{split}
+$$
+在此基础上加上一个L2惩罚，就得到标签为{1,-1}时逻辑回归损失函数：
+$$
+E_{逻辑回归}=\sum_i\ln(1+e^{-\textcolor{red}{y_i(\bold w^Tx_i+b)}})+\textcolor{green}{\lambda\bold w^T\bold w}
+$$
+和SVM的损失函数比较：
+$$
+\begin{split}E_{SVM}=&C\cdot\sum_imax\left\{0,1-y_i(\bold w^T\bold x+b)\right\}+\frac12\bold w^T\bold w
+\\=&C\left[\sum_iHinge(\textcolor{red}{y_i(\bold {w^Tx_i}+b)})+\underbrace{\textcolor{green}{\frac1{2C}}}_{\lambda}\textcolor{green}{\bold w^T\bold w}\right]\end{split}
+$$
+至此可以清晰地看出两者的关系：模糊边界SVM损失函数是Hinge铰链函数，而逻辑回归损失函数是$\ln(1+e^{-x})$
+
+<img src="img/SVM&logistic.PNG" alt="SVM&amp;logistic" style="zoom: 67%;" />
+
+#### 四、kernel
+
+$kernel(x,y)=\phi(x)^T\cdot\phi(y)\in\mathbb R^D\times\mathbb R^D\to\mathbb R$，对应x，y映射到一个feature space后的内积。
+
+离散kernel：一个包含所有输入数据的==对称、半正定==矩阵$\bold K$（Gram矩阵）。对称、半正定的条件是为了保证优化问题是一个凸函数，否则可能找不到全局最优解。
+$$
+\bold K=\begin{pmatrix}k(x_1,x_1)&k(x_1,x_2)&\cdots&k(x_1,x_n)
+\\k(x_2,x_1)&&&\vdots
+\\\vdots&&\ddots
+\\k(x_n,x_1)&&&kk(x_n,x_n)
+\end{pmatrix}
+$$
+kernel性质：
+
+1. $k(x_1,x_2)=k_1(x_1,x_2)+k_2(x_1,x_2)$，其中$k_1、k_2\in\mathbb R^{N\times N}\to \mathbb R$
+2. $k(x_1,x_2)=k_1(x_1,x_2)\times k_2(x_1,x_2)$
+3. $k(x_1,x_2)=C\cdot k_1(x_1,x_2),C\gt0$
+4. $k(x_1,x_2)=\bold {x_1Ax_2},\bold A\in\mathbb R^{N\times N}$，为对称、半正定矩阵
+5. $k(x_1,x_2)=k_3(\phi(x_1),\phi(x_2))$，其中$k_3\in\mathbb R^M,\phi\in\mathbb R^N\to\mathbb R^M$
+
+常用kernel：
+
+1. 多项式：$k(\bold{a,b)}=(\bold{a^Tb})^p$或$(\bold{a^Tb+1})^p$
+2. 高斯：$k(\bold {a,b})=\exp\left(-\frac{||\bold{a-b}||^2}{2\sigma^2}\right)$
+3. Sigmoid：$k(\bold {a,b})=\tanh\kappa\bold{a^Tb}-\delta$，其中$\kappa,\delta\gt0$
+
+当$g(\alpha)=\sum_i\alpha_i-\frac12\sum_i\sum_jy_iy_j\alpha_i\alpha_j\textcolor{red}{\bold {x_i^T x_j}}$时，分类边界是一条直线。替换$\bold{x_i^Tx_j}$为$\bold {\phi(x_i)^T\phi(x_j)}=k(x_i,x_j)$可以把数据映射到高维空间，让SVM生成非线性分界边界。
+
+<img src="img/SVMwithKernel.PNG" alt="SVMwithKernel" style="zoom:50%;" />
 
 ## 深度学习
 
@@ -997,6 +1161,21 @@ $\therefore$ ==初始化权重矩阵时，令$Mean(W)=0, Var(W)=\frac{2}{fan-in+
 
 <img src="img/9-5.PNG" alt="9-5" style="zoom: 67%;" />
 
+#### 六、防溢出
+
+softmax常包含$e^{x_i}$项，在计算机中处理指数上升数据常要考虑数据溢出。为防止溢出可以计算
+$$
+\log\sum_i^Ne^{x_i}=a+\log\sum_i^Ne^{x_i-a}
+$$
+即将数据均值平移a，通常取$a=\max{x_i}$
+
+> $\log\sum_i^Ne^{x_i}=a+(-a)+\log\sum_i^Ne^{x_i}=a+\log e^{-a}+\log\sum_i^Ne^{x_i}=a+\log\sum_i^Ne^{x_i-a}$
+
+同理对softmax函数，可以计算
+$$
+\frac{e^{x_i}}{\sum_i^Ne^{x_i}}=\frac{e^{x_i-a}}{\sum_i^Ne^{x_i-a}}
+$$
+
 ## PyTorch
 
 ```python
@@ -1126,7 +1305,7 @@ $\therefore$ 所有$\lambda_i$ 的和是已知的。求出前i个$\lambda$，比
 
 #### 二、Probabilistic PCA
 
-**1. 建模：**线性回归模型：$X\sim Wz_i+\mu+\epsilon_i\\ z_i\sim \mathcal N(0,\bold I)\\x_i|z_i\sim \mathcal N(\bold W\bold z_i+\overrightarrow\mu,\sigma^2\bold I),\bold W\in\mathbb R^{D\times K}$，默认噪音为$diag(\sigma^2,\sigma^2,\cdots,\sigma^2)$
+**1. 建模：**线性回归模型：$\begin{array}{|}X\sim Wz_i+\mu+\epsilon_i\\ z_i\sim \mathcal N(0,\bold I)\\x_i|z_i\sim \mathcal N(\bold W\bold z_i+\overrightarrow\mu,\sigma^2\bold I),\bold W\in\mathbb R^{D\times K}&默认噪音为diag(\sigma^2,\sigma^2,\cdots,\sigma^2)\end{array}$
 
 <img src="img/10-1.PNG" style="zoom: 25%;" />
 
@@ -1135,8 +1314,14 @@ $\therefore$ 所有$\lambda_i$ 的和是已知的。求出前i个$\lambda$，比
 ![10-2](img/10-2.PNG)
 
 **2. 学习：** 积分除去z，$p(x)=\int p(x|z)\cdot p(z)dz$
+$$
+p(x)=\int\mathcal N(0,\bold I)\cdot\mathcal N(\bold W\bold z_i+\overrightarrow\mu,\sigma^2\bold I)dz
+=\mathcal N(\mu,\bold W\bold W^T+\sigma^2\cdot \bold I)
+$$
 
-$x_i\sim\mathcal N(\mu,\bold W\bold W^T+\sigma^2\cdot \bold I)$
+> $\mathbb E[\bold x]=\mathbb E[\bold{Wz+\mu+\epsilon}]=\bold W\mathbb E[\bold z]+\mathbb E[\mu]+\mathbb E[\epsilon]=\mu$
+>
+> $Cov[\bold x]=\mathbb E[(\bold x-\mathbb E\bold[x])(\bold x-\mathbb E\bold[x])^T]=\mathbb E[(\bold{Wz+\epsilon})(\bold{Wz+\epsilon})^T]\\=\mathbb E[\bold{Wzz^TW^T+\epsilon\epsilon^T}]=\bold W\mathbb E[\bold {zz^T}]\bold W^T+\mathbb E[\epsilon\epsilon^T]=\bold {WIW^T+\sigma^2I}=\bold{WW^T+\sigma^2I}$
 
 **3. 推理**
 
@@ -1145,8 +1330,6 @@ $x_i\sim\mathcal N(\mu,\bold W\bold W^T+\sigma^2\cdot \bold I)$
 由于分布z的维度比观察样本x少，因此实现了降维
 
 ==pPCA无需计算$\Sigma_x$ 矩阵，不需要全部数据（只需要likelihood function），因此可以处理缺失值==
-
-??? $p([x_a,x_c]|z,W,\mu,\sigma)=\int p([x_a,x_b,x_c]|z,W,\mu,\sigma)\cdot p(x_b|z,W,\mu,\sigma)dx_b$
 
 **4. pPCA与PCA的关联**
 $$
