@@ -325,10 +325,6 @@ $$
 
 #### 一、牛顿——欧拉公式
 
-
-
-
-
 速度递推公式方向：原点坐标系$\to$末端，因此称为Forward
 
 力/扭矩递推公式方向：末端$\to$原点坐标系，Backward
@@ -446,7 +442,7 @@ $$
 
 原来系统微分方程为：$m\ddot x+b\dot x+k x=f_{外力}$，
 
-**解：**令$f=\alpha f'+\beta$，其中$\alpha=m\\\beta=b\dot x+kx$，再设$f'=-k_v\dot x-k_px$,就得到$\therefore \ddot x=f'\triangleq -k_v\dot x-k_px$
+**解：**令$f=\alpha f'+\beta$，其中$\begin{cases}\alpha=m\\\beta=b\dot x+kx\end{cases}$，再设$f'=-k_v\dot x-k_px$,就得到$\therefore \ddot x=f'\triangleq -k_v\dot x-k_px$
 
 系统微分方程转换为：$\ddot x+k_v\dot x+k_p x=0$，变回没加外力的样子，顺便质量单元也消失了，成了单位质量1。
 
@@ -491,6 +487,8 @@ $$
 \end{array}
 $$
 $e$现在在原先$x$的位置，意味着这个模型可以消除所有扰动和初始误差。
+
+<img src="img/errorSpace.PNG" alt="errorSpace" style="zoom:50%;" />
 
 上述为纯数学角度，实际上肯定有没纳入模型的因素，模型会失效。实际应用中一般加上积分环节称为PID控制器。
 
