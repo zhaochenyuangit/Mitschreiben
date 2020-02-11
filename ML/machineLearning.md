@@ -1440,3 +1440,58 @@ $$
 
 * 当Autoencoder为线性，即$f_{enc}/f_{dec}=\bold x\bold W$时，输出$\hat y=xW_1W_2\triangleq x\cdot W$（令W秩为R），则就相当于PCA或SVD
 
+
+
+## 聚类
+
+有$z_i\in K$类，使得组内差异小，组间差异大。$\min\limits_{\bold Z,\mu}J(\bold X,\bold Z,\mu)=\min\limits_{\bold Z,\mu}\sum\limits_i\sum\limits_kz_{ik}||x_i-\mu_k||^2$，另外必须保证每个$x_i$均分到类$\to\forall i\ \sum\limits_kz_{ik}=1$
+
+#### 一、K-means
+
+1. 初始化聚类中心centroids $\mu_1,\mu_2,\cdots,\mu_k$
+2. 更新分类结果$z_{ik}=\begin{cases}1\ 如果k=\mathop{\arg\min}\limits_j||x_i-\mu_j||^2\\0\end{cases}$
+
+3. 更新聚类中心$\mu_k=\frac1{N_k}\sum\limits_iz_{ik}\bold x_i$
+4. 重复步骤2、3直至收敛
+
+#### 二、混合高斯
+
+K-means每次将一个数据点归到最近的类，混合高斯可以给出一个数据到多个类的概率。
+$$
+p(\bold x|\pi,\mu,\Sigma)=\sum\limits_k\underbrace{p(z_k|\pi)}_{分类先验概率}\cdot \underbrace{p(\bold x|z_k,\mu_k,\Sigma_k)}_{以聚类中心建模的高斯}=\sum\limits_k\pi_k\cdot\mathcal N(\bold x|\mu_k,\Sigma_k)\\
+即几个高斯模型的线性组合，几个高斯模型完全无联系，\Sigma_k任意取
+$$
+<img src="img/GMM.PNG" alt="GMM" style="zoom:50%;" />
+
+> 当数据分布不呈椭圆形，用单一高斯模型来建模就不精准。混合高斯模型即多个椭圆叠加更好。
+
+1. **推理**：数据点$x_i $聚类到第k类的概率即为
+
+$$
+p(z_{ik}|\bold x_i,\pi,\mu,\Sigma)=\frac{p(x|z)\cdot p(z)}{p(x)}=\frac{\mathcal N(x_i|\mu_k,\Sigma_k)\cdot\pi_k}{\sum\limits_j\pi_j\cdot\mathcal N(\bold x_i|\mu_j,\Sigma_j)}
+\triangleq \gamma(z_{ik})
+$$
+
+2. **学习**：如何获得参数$\mu_k,\Sigma_k,\pi_k$？
+
+答：最大化$x$出现的概率，即最大化$\log p(x|\pi,\mu,\Sigma)=\max\ \log\left[\sum\limits_k\pi_k\cdot\mathcal N(x_i|\mu_k,\Sigma_k)\right]$
+
+如果是分类问题，有标签$z_i$可以设损失函数$Loss=\sum\mu_i-z_i=\hat z_i-z_i$。然而在聚类问题中，根本没有z。没有依据来更新参数。
+
+> 回顾监督学习LDA，标签$z\sim CAT(\overrightarrow\pi),\pi_k=\frac{N_k}{N_总}$；数据$x\sim\mathcal N(\mu_k,\Sigma_{共享})$
+
+3. **EM算法**：Expectation+Maximization
+
+$$
+\begin{array}{l|l}
+E\to用初始先验（initial\ guess）先做一次聚类，生成标签\overrightarrow {z_i}
+&\gamma_t(z_{ik})=p(z_{ik}|\bold x_i,\pi,\mu,\Sigma)
+\\
+M\to更新参数\pi,\mu,\Sigma&\mathop{\arg\max}\limits_{\pi,\mu,\Sigma}\mathop{\mathbb E}\limits_{\bold Z\sim\gamma_t}\log p(\bold{X,Z}|\pi,\mu,\Sigma)
+\\&\mu_k^{(t+1)}=\frac1{N_k}\sum\limits_i\gamma_t(z_{ik})\cdot x_i：加权平均
+\\&\pi_k^{(t+1)}=\frac{N_k}{N},N_k\sum\limits_i\gamma_t(z_{ik})
+\\&\Sigma_k^{(t+1)}=\frac1{N_k}\sum\limits_i\gamma_t(z_{ik})(x_i-\mu_k^{(t+1)})(x_i-\mu_k^{(t+1)})^T
+\end{array}
+$$
+
+E减少KL散度，M把下限往上推
