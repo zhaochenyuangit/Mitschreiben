@@ -478,3 +478,180 @@ def iCP(dst,src_init,iteration):
 | 缺陷成因 | metal objects scatters x-ray beam,<br />geometric error      | chemical property changes in water containing body tissue<br />mechanical vibration |
 | 造影剂   | tissues can not be distinguished which have same absorbtion rate (e.g. vessal and lymph) | Gadolinium is para-magnetic substance, it reduces T1 by changing osmolarity of body tissues containing water$\implies$ better contrast |
 
+## MRI
+
+Magnetic Resonance Image，利用$10^1\sim10^5m$波长，能量低。
+
+#### 一、原理
+
+人体内水原子water proton本来就有自转轴，但方向混乱。不表现磁性。受磁场激发后方向一致，角速度$\omega=\gamma\cdot B,\gamma$量纲为$\frac{MHz}{Tesla}$，对特定原子为定值。绝大多数水原子旋转轴与磁场$B_0$同向，极少数反向。
+
+两次RF冲击：
+
+1. 在上述稳定情况下，给$B_0$垂直方向加一个90°脉冲pulse（即一个冲击磁场，又称射频），让所有水原子转轴旋转90°。在这一瞬间，由于转轴方向相同、各向同性，能产生信号。然而由于这一瞬间还外加了强大的90°磁场，不能测信号强度。此时纵向磁化(longitudinal magnetization)$M_z=0$，横线磁化(transverse ~)$M_{xy}$最大。
+2. 由于磁场不均匀，转轴开始以不同角速度旋转，转轴发散，信号消失。纵向磁化开始恢复（时间常数$T_1$），横向磁化开始消失（时间常数$T_2$）。
+
+![](img/8806734.gif)
+
+3. 加一个与$B_0$方向相反的180°脉冲，冲击时间比90°pulse更短。因此所有转轴不会直接朝向-180°方向，而仅沿水平面镜像翻转。转轴仍按原来的速度旋转（竖直、水平转速均反向），经过相同时间t，转回原来90°pulse位置，转轴指向重新一致，重新磁化，信号又出现了，称为spin echo。
+4. 如果spin echo出现的时刻为$T_E(Echo)$，那么180°脉冲必须在$T_e/2$时刻。而两次90°脉冲间隔称为$T_R(Repetition)$
+
+<img src="img/1517606_orig.gif" alt="RF pulse" style="zoom: 67%;" />
+
+#### 二、信号与图像生成
+
+信号强度$S=K\cdot[H]\cdot(1-e^{-\frac{T_R}{T_1}})\cdot e^{-\frac{T_E}{T_2}}$，K为系数，[H]为水分子密度（转轴密度）
+
+$T_1$与$T_2$：不同身体组织$T_1,T_2$常数不同，信号恢复/衰减速度有区别。
+
+<img src="img/T1.gif" style="zoom: 67%;" /> <img src="img/T2.gif" style="zoom: 67%;" />
+
+* 组织T1常数越大，在T1加权图像中越黑
+* T2越大，在T2加权图像中越亮
+* Gadolinium（镓）同时减小T1、T2，增强T1加权对比度，减弱T2加权。
+
+$T_E$与$T_R$：
+
+*  TR<500ms，TE<25ms ，$T_E$太短，$M_{xy}$还没来得及衰退，不论$T_2$值如何，$M_{xy}$都相同。此时主要拍$M_z$恢复程度差异，这样的图像称为T1-weighted（T1加权）。
+*  TR＝1500～2500ms，TE＝90～120ms， $T_E$长，$M_{xy}$衰退差异已经很明显，占主导。称为T2-weighted
+* TE短，TR长。不同组织的$M_z,M_{xy}$均无差异。信号强度S=[H]=水分子密度。
+
+![](img/3310360.gif)
+
+> short指$T_E,T_R\ll T_1,T_2$，long指$T_E,T_R=3\sim5\cdot T_1(T_2)$
+
+#### 三、空间位置信息
+
+<img src="img/mri-sliceselection-1@2x.png" style="zoom: 50%;" />
+
+$\omega(z)=\gamma\cdot (B_0+z\frac{dG_z}{dz})$，变化率$\frac{dG_z}{dz}$称为slice selective gradient，这样沿着z轴每处水原子自传角速度均不同。
+
+当且仅当90°脉冲频率与水原子自传频率相同时，自转轴会被脉冲旋转90°到达水平面。选择不同频率的90°脉冲，就可以选择不同的切片。
+
+与此同时，y方向磁场变化率$\frac{dG_y}{dy}$，沿y方向每处自选轴相位$\phi$不同。
+
+读取信号时，在x方向加磁场变化率$\frac{dG_x}{dx}$，沿x方向每处自传频率$\omega$均不同
+
+最后取z位置的一片图像，对x、y坐标fft变换后得到最终图像。
+
+<img src="img/MRI-FFT.PNG" alt="MRI-FFT" style="zoom:50%;" />
+
+#### 四、缺陷Artifacts
+
+1. chemical shift:  occurs in the frequency-encoding direction and is due to spatial misregistration of fat and water molecules 
+2. Gibbs Ringing:  low intensity "rings" parallel to the edges of the sample. 64 samples are aquired in the phase encode direction, 256 samples are aquired in the readout direction. So 192 samples in the readout direction are discarded, which leads to a loss of resolution.
+3. Motion&instability:  any instability or fluctuations in the system, e.g.  power supply problems, mechanical vibrations. 
+4.  RF Inhomogeneity:  The shadowing (due to RF eddy currents in the copper foil) results in almost complete signal dropout. 
+5. Foldover: occurs in the phase-encoding direction, the phases of signal-bearing tissues outside of the FOV in the y-direction are replication of the phases will be recorded and backfolded into the incorrect locations.
+
+## 超声波
+
+$\gt20.000Hz$，常用$2.5\to20MHz$，$\lambda=\frac cf=\frac{波速}{频率}$
+
+由于声波慢，出发到返回间有时间差。相同时间中数有几个波，$\lambda=0.22mm$为最小可分辨波长
+
+#### 一、原理
+
+##### （一）、声波衰减
+
+声波是纵波，声源协振$x(t)=x_0\sin(\omega t-\phi)$，传播方程为$x(t,y)=x_0\sin(\frac{2\pi}{\lambda}(ct-y))$，声压为
+$$
+p(t,y)=p_0\cos(\frac{2\pi}{\lambda}(ct-y))
+\\=\rho c\nu(t,y)\triangleq Z\cdot\nu(t,y)
+$$
+$Z=\rho c$称为声阻，声波在声阻不同的介面会被反射。接受所有回声需要两倍传播时间
+
+<img src="img/US-interface.PNG" alt="US-interface" style="zoom:50%;" />
+
+Wave Scattering：比$\lambda$小的组织会使声波发散，而基本上所有组织都会发散声波，且不同组织发散形式不同
+
+能量衰减方程：$I(y)=I_0e^{-\alpha y}$，衰减系数$\alpha$取决于频率与物质本身$\alpha=\alpha_0f^n$
+
+##### （二）、Beamforming
+
+<img src="img/US-Beamforming.PNG" alt="US-Beamforming" style="zoom: 50%;" /><img src="img/US-Beamforming2.PNG" alt="US-Beamforming2" style="zoom:50%;" />
+
+发射与接收声波均可用（transmit and receive，或rx&tx）。发射时，经过延时，不同发射源的声波恰好同时到达目标深度。接收回声时同理，对接收到的声音先延时再叠加delay and sum。
+
+**成像方式：**
+
+1. Scanline：每次生成沿传播方向一行图像，每一行都有对应的发射源。（比较慢，每次都要等）
+2. Planewave：一次成型
+
+声波会衍射，需要用过滤器过滤衍射波只留下主波。Point Spread Function（PSF）用于评价声波特征。理想的声波应LR小，PSL大。
+
+<img src="img/US-PSF.PNG" alt="US-PSF" style="zoom:50%;" />
+
+**预处理**：接收到模拟Radiofrequency信号，Hilbert变换得到包络线Envelop，再数字化Subsampling
+
+<img src="img/Hilbert-signal-processing-graph.png" style="zoom: 50%;" />
+
+##### （三）、分离度
+
+两个太近的散射源会融合到一起，分不清。Full Width at Half Maximum （FWHM）是两个物体可以分离的最小距离。
+
+<img src="img/US-FWHM.PNG" alt="US-FWHM" style="zoom: 33%;" /><img src="img/US-FWHM2.PNG" alt="US-FWHM2" style="zoom:40%;" />
+
+#### 二、发射器
+
+发射源阵列——压电（piezoelectricity）元件
+
+* Linear array: 长方形阵列中排列相同发射源transducer。分辨率高，深度$\lt10cm$
+* Curvilinear: 圆弧circular arc，分辨率高，深度20cm
+* Phased array: 更小的长方形阵列，可通过electronically steered beams偏斜，从一个窗口扫过一片区域。深度20cm
+* Intravascular: 棒末端一个压电元件，只用一条超声波成像，深度$\lt3cm$
+* Biplanar
+
+<img src="img/US-array.PNG" alt="US-array" style="zoom: 67%;" />
+
+#### 三、缺陷
+
+* Shadow and enhancement
+* Nonlinearity of tissue propagation
+* interferecen of waves
+
+这些成像缺陷可以用滤波器Filter弥补
+
+## Tomosynthesis
+
+|                                | 优点                                                         | 缺点                                                         |
+| ------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| Conventional Linear Tomography | depth localization                                           | Image blur from out of plane anatomy<br />only aquires one slice at a time, require an excessive dose to aquire a volume |
+| CT                             | Volumetric Images<br />Reduces overlapping structures<br />Reconstruct many different planes<br />High sensitivity | radiation dose                                               |
+| Orthopedic Tomosynthesis       | Lower dose than CT<br />Avoid streak artifacts from metal<br />less stringent positioning | Not able to have flexible image reconstruction               |
+| Chest Tomosynthesis            | reduced overlapping structures(X-ray)<br />lower dose, lower cost and better resolution in X&Y direction(CT) | longer reading time(X-ray) <br />limited depth resolution(CT) |
+
+3D Digital Breast Tomosynthesis
+
+* Effect of Sweep Angle: wide angle - superior depth resolution, but complex mechanical movement and longer scan time; narrow angle - lower depth resolution, loss of details, but simple design, shorter scan time
+* Effect of number of projections: Large number - better reconstruction, but lower SNR per projection (the total dose unchanged), thus lower image quality, longer scan time; Small number - less data for 3D reconstruction, but higher SNR dose, thus better 
+* Tube motion: continuous - faster scan time, simpler mechanics, but exposures during the tube`s movement create anyway a blurring effect; step&shoot - image made in "Frozen" conditions are clear and Crispy, less details lost, but more complex mechanics to avoid vibrations due to variations of speed.
+
+2D DM and 3D DBT:
+
+* pros: reduces superimposition, possibility to reduce compression
+* cons: microcalcification
+
+## Nuclear medizin Imaging
+
+不展现解剖学anatomy结构，而是器官功能function。
+
+比如把糖带上辐射给病人吃，看放射性物质最终去向。和一般人不同说明器官工作不正常
+
+**辐射类型：**
+
+* $\alpha$：$H_2^4$氦核，质量大、危险，但也很容易停下
+* $\beta^+/\beta^-$：电子，其中$\beta^+$反电子是反物质，会湮灭，更危险
+* $\gamma$：电磁波
+
+**Gamma detector**
+
+1. Scintillator crystal + photomultiplier array (需要collimater限制入射方向)
+2. Semiconductor detector array
+
+**Modalities**
+
+1. Scintigraphy
+2. SPECT
+3. PET, 示踪剂F18-FDG，一次只往两个相背的方向发射两个光子，图像质量高。
+

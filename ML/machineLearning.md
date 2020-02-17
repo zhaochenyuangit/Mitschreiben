@@ -855,10 +855,10 @@ $\alpha_i\neq0$处，$y_i(\bold w^T\bold x+b)=1\implies \bold w^T\bold x+b=\frac
 $$
 \therefore 
 \begin{array}{l|l}
-b=average(y_i-\bold w^T\bold x)&取平均值更稳定
+b_i=average(y_i-\bold w^T\bold x_i)&取平均值更稳定b=\frac{\sum_i\alpha_ib_i}{\sum_i\alpha_i}
 \\
 \hline 
-\bold w=\sum_{i\in S}\alpha_iy_i\bold x&\bold w实际上只取决于支持向量
+\bold w=\sum\limits_{i\in S}\alpha_iy_i\bold x&\bold w实际上只取决于支持向量
 \end{array}
 $$
 
@@ -1131,9 +1131,9 @@ $$
 
 输入N，L，C的数据时，对每一个C做一次。
 
-* N - batch size / sample size
-* L - sequence length
-* C - the number of features / channels / filters
+* N - batch size / sample size (N张图片)
+* L - sequence length （一张图片有32$\times$32个像素）
+* C - the number of features / channels / filters (RGB三个通道)
 
 ##### （三）、Residual Net
 
