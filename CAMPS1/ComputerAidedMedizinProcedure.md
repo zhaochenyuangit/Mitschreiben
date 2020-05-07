@@ -255,16 +255,7 @@ def get_neighbour(rows,cols,x,y):
 
 
 
-#### 六、其他
-
-##### 图片分离难点
-
-* Noise: 常见于Ultra Sonic
-* Partial volume effects: 像素有限，当像素不够精细时，前景背景交界处会模糊
-* Imaging artifacts：患者戴的金属首饰、头发上的发蜡导致图片失真
-* Leakage problem：纯灰度值分类法常分不清相似组织的边界
-
-##### 分离算法设计指标
+#### 六、分离算法设计指标
 
 * Degree of Supervision 监督强度
 * Reproducibility
@@ -391,25 +382,6 @@ $$
 
 4. Deformable， 特别复杂，可能有成千上万个参数
 
-
-#### 三、难点
-
-**Pitfalls**
-
-* local consistency
-
-* No overlapping area
-* bad initialization
-* local minimum
-* similarity measure does not model scenario
-* transformation model does not model scenario
-
-**2D-3D难点** （比如合并CT与X光照片）
-
-* different dimensions
-* different modalities
-* outliers
-
 ## Feature-Based Registration
 
 Feature 定位：
@@ -429,7 +401,7 @@ Feature 定位：
 
 > $\because Y=RX, Y^T=X^TR^T,\therefore XY^T=XX^TR^T=UD\underbrace{U^TR^T}_{V^T}$  
 
-4. $t=Y-RX$，（原则上此时$t\equiv0$）
+4. $t=\bar Y-R\bar X$，（原则上此时$t\equiv0$）
 
 #### 二、ICP
 
@@ -466,17 +438,6 @@ def iCP(dst,src_init,iteration):
 ```
 
 ???forward scan???
-
-## CT 与 MRI
-
-<img src=".\img\CT1.png" alt="CT1" style="zoom: 50%;" />
-
-|          | CT                                                           | MRI                                                          |
-| -------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| 成像特点 | no details about soft tissue, only bones, <br />anatomical study | show soft tissues<br />physiological study                   |
-| 原理     | Density Imaging, X-ray is weakened in scale to density or absorption rate of body tissues, generating a 3D image from multiple 2D X-ray images taken around a single rotation axis | water proton imaging, through the energy emission from relaxation of water proton spinning in the body tissue after stimulated by a spinning magnetic field |
-| 缺陷成因 | metal objects scatters x-ray beam,<br />geometric error      | chemical property changes in water containing body tissue<br />mechanical vibration |
-| 造影剂   | tissues can not be distinguished which have same absorbtion rate (e.g. vessal and lymph) | Gadolinium is para-magnetic substance, it reduces T1 by changing osmolarity of body tissues containing water$\implies$ better contrast |
 
 ## MRI
 
@@ -536,23 +497,13 @@ $\omega(z)=\gamma\cdot (B_0+z\frac{dG_z}{dz})$，变化率$\frac{dG_z}{dz}$称�
 
 <img src="img/MRI-FFT.PNG" alt="MRI-FFT" style="zoom:50%;" />
 
-#### 四、缺陷Artifacts
-
-1. chemical shift:  occurs in the frequency-encoding direction and is due to spatial misregistration of fat and water molecules 
-2. Gibbs Ringing:  low intensity "rings" parallel to the edges of the sample. 64 samples are aquired in the phase encode direction, 256 samples are aquired in the readout direction. So 192 samples in the readout direction are discarded, which leads to a loss of resolution.
-3. Motion&instability:  any instability or fluctuations in the system, e.g.  power supply problems, mechanical vibrations. 
-4.  RF Inhomogeneity:  The shadowing (due to RF eddy currents in the copper foil) results in almost complete signal dropout. 
-5. Foldover: occurs in the phase-encoding direction, the phases of signal-bearing tissues outside of the FOV in the y-direction are replication of the phases will be recorded and backfolded into the incorrect locations.
-
 ## 超声波
 
 $\gt20.000Hz$，常用$2.5\to20MHz$，$\lambda=\frac cf=\frac{波速}{频率}$
 
 由于声波慢，出发到返回间有时间差。相同时间中数有几个波，$\lambda=0.22mm$为最小可分辨波长
 
-#### 一、原理
-
-##### （一）、声波衰减
+#### 一、声波衰减
 
 声波是纵波，声源协振$x(t)=x_0\sin(\omega t-\phi)$，传播方程为$x(t,y)=x_0\sin(\frac{2\pi}{\lambda}(ct-y))$，声压为
 $$
@@ -567,11 +518,13 @@ Wave Scattering：比$\lambda$小的组织会使声波发散，而基本上所�
 
 能量衰减方程：$I(y)=I_0e^{-\alpha y}$，衰减系数$\alpha$取决于频率与物质本身$\alpha=\alpha_0f^n$
 
-##### （二）、Beamforming
+#### 二、Beamforming
 
-<img src="img/US-Beamforming.PNG" alt="US-Beamforming" style="zoom: 50%;" /><img src="img/US-Beamforming2.PNG" alt="US-Beamforming2" style="zoom:50%;" />
+<img src="img/US-Beamforming.PNG" alt="US-Beamforming" style="zoom: 50%;" />
 
 发射与接收声波均可用（transmit and receive，或rx&tx）。发射时，经过延时，不同发射源的声波恰好同时到达目标深度。接收回声时同理，对接收到的声音先延时再叠加delay and sum。
+
+<img src="img/US-Beamforming2.PNG" alt="US-Beamforming2" style="zoom:50%;" />
 
 **成像方式：**
 
@@ -586,13 +539,108 @@ Wave Scattering：比$\lambda$小的组织会使声波发散，而基本上所�
 
 <img src="img/Hilbert-signal-processing-graph.png" style="zoom: 50%;" />
 
-##### （三）、分离度
+为了让人肉眼看得更清楚需要log compression
+
+如果图像质量仍不理想可能需要Filtering
+
+#### 三、分离度
 
 两个太近的散射源会融合到一起，分不清。Full Width at Half Maximum （FWHM）是两个物体可以分离的最小距离。
 
-<img src="img/US-FWHM.PNG" alt="US-FWHM" style="zoom: 33%;" /><img src="img/US-FWHM2.PNG" alt="US-FWHM2" style="zoom:40%;" />
+<img src="img/US-FWHM.PNG" alt="US-FWHM" style="zoom: 33%;" />
 
-#### 二、发射器
+<img src="img/US-FWHM2.PNG" alt="US-FWHM2" style="zoom:40%;" />
+
+## 背诵内容
+
+#### SSIM （Sturcture Similarity Index Metric）
+
+3 Components: Luminance, Contrast, Structure
+
+#### Segmentation 图片分离难点
+
+* Noise: 常见于Ultra Sonic
+* Partial volume effects: 像素有限，当像素不够精细时，前景背景交界处会模糊
+* Imaging artifacts：患者戴的金属首饰、头发上的发蜡导致图片失真
+* Leakage problem：纯灰度值分类法常分不清相似组织的边界
+
+#### Challenges of deep learning techniques in segmentation and their solution
+
+- Low amount of annotated data: use data augmentation, and auxiliary labels to account for it
+- Leakage problem: assign higher weights for border pixels
+- data imbalance: selective sampling, data augmentation, and weight cross-entrophy
+
+#### How can convolutional Neuron Network handle 3D data?
+
+* use 2D slices and post-process the results for consistency
+* extract triplets of slices per sample (one per plane) and use them as channels
+* use 3D convolutional networks (e.g. V-net) 
+
+#### Registration 难点
+
+**Pitfalls**
+
+* local consistency
+
+* No overlapping area
+* bad initialization
+* local minimum
+* similarity measure does not model scenario
+* transformation model does not model scenario
+
+**2D-3D难点** （比如合并CT与X光照片）
+
+* different dimensions
+* different modalities
+* outliers
+
+#### X-Ray to CT registration
+
+由CT产生generated平扫X-Ray，简单，称为DRR：Digitally Reconstructed radiograph
+
+**Deep DRR**: annotate a handful of CTs, generate thousands of realistic X-rays from them while projecting the labels using the known geometry.
+
+**Convolutional Pose Machine**: 输入X-ray，训练网络自动标记annatation位置。训练样本、标签为Deep DRR产生的数据
+
+**problems of Xray to CT registration**:
+
+* feature based: detect corresponding 2d and 3d points in the X-ray and CT
+
+  * pros: no initialization, very fast
+
+  * cons: pretty unprecise, finding corresponding ponits is difficult, markers are invasive 
+
+* intensity based: start from the initial ponit, compare DRR to the true X-ray, compute the best move and generate the next DRR
+
+  * pros: very precise
+  * cons: requires an initialization
+
+**Perspective n Ponit**:
+
+1. 用与病人无关的数据，先训练一个NN，得到一些weights
+2. 用病人的CT（not labelled）， Deep DRR forward projection得到simulated X-ray （已知position）；用Convolutional Pose Machine 得到X-ray的landmark，再反向投影回CT得3d坐标annotation（但不精准）；多次投影取均值，再取骨头上离预测点最近的一点（clustering）；再次forward projection 得到x-ray landmarks，重新训练NN。此时这个NN是为这位病人量身定做的。
+3. 用于CT X-ray registration， 输入病人位置position的x-ray， 得到自动标记annatation的x-ray与CT
+
+#### CT 与 MRI
+
+<img src=".\img\CT1.png" alt="CT1" style="zoom: 50%;" />
+
+|          | CT                                                           | MRI                                                          |
+| -------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| 成像特点 | no details about soft tissue, only bones, <br />anatomical study | show soft tissues<br />physiological study                   |
+| 原理     | Density Imaging, X-ray is weakened in scale to density or absorption rate of body tissues, generating a 3D image from multiple 2D X-ray images taken around a single rotation axis | water proton imaging, through the energy emission from relaxation of water proton spinning in the body tissue after stimulated by a spinning magnetic field |
+| 缺陷成因 | metal objects scatters x-ray beam,<br />geometric error      | chemical property changes in water containing body tissue<br />mechanical vibration |
+| 造影剂   | tissues can not be distinguished which have same absorbtion rate (e.g. vessal and lymph) | Gadolinium is para-magnetic substance, it reduces T1 by changing osmolarity of body tissues containing water$\implies$ better contrast |
+
+#### MRI缺陷Artifacts
+
+1. chemical shift:  occurs in the frequency-encoding direction and is due to spatial misregistration of fat and water molecules 
+2. Gibbs Ringing:  low intensity "rings" parallel to the edges of the sample. 64 samples are aquired in the phase encode direction, 256 samples are aquired in the readout direction. So 192 samples in the readout direction are discarded, which leads to a loss of resolution.
+3. Motion&instability:  any instability or fluctuations in the system, e.g.  power supply problems, mechanical vibrations. 
+4. RF Inhomogeneity:  The shadowing (due to RF eddy currents in the copper foil) results in almost complete signal dropout. 
+5. Foldover: occurs in the phase-encoding direction, the phases of signal-bearing tissues outside of the FOV in the y-direction are replication of the phases will be recorded and backfolded into the incorrect locations.
+
+#### 超声波发射器
 
 发射源阵列——压电（piezoelectricity）元件
 
@@ -604,7 +652,7 @@ Wave Scattering：比$\lambda$小的组织会使声波发散，而基本上所�
 
 <img src="img/US-array.PNG" alt="US-array" style="zoom: 67%;" />
 
-#### 三、缺陷
+#### 超声波缺陷
 
 * Shadow and enhancement
 * Nonlinearity of tissue propagation
@@ -612,7 +660,7 @@ Wave Scattering：比$\lambda$小的组织会使声波发散，而基本上所�
 
 这些成像缺陷可以用滤波器Filter弥补
 
-## Tomosynthesis
+#### Tomosynthesis
 
 |                                | 优点                                                         | 缺点                                                         |
 | ------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
@@ -624,7 +672,7 @@ Wave Scattering：比$\lambda$小的组织会使声波发散，而基本上所�
 3D Digital Breast Tomosynthesis
 
 * Effect of Sweep Angle: wide angle - superior depth resolution, but complex mechanical movement and longer scan time; narrow angle - lower depth resolution, loss of details, but simple design, shorter scan time
-* Effect of number of projections: Large number - better reconstruction, but lower SNR per projection (the total dose unchanged), thus lower image quality, longer scan time; Small number - less data for 3D reconstruction, but higher SNR dose, thus better 
+* Effect of number of projections: Large number - better reconstruction, but lower SNR per projection (the total dose unchanged), thus lower image quality, longer scan time; Small number - less data for 3D reconstruction, but higher SNR dose, thus better  image quality
 * Tube motion: continuous - faster scan time, simpler mechanics, but exposures during the tube`s movement create anyway a blurring effect; step&shoot - image made in "Frozen" conditions are clear and Crispy, less details lost, but more complex mechanics to avoid vibrations due to variations of speed.
 
 2D DM and 3D DBT:
@@ -632,7 +680,7 @@ Wave Scattering：比$\lambda$小的组织会使声波发散，而基本上所�
 * pros: reduces superimposition, possibility to reduce compression
 * cons: microcalcification
 
-## Nuclear medizin Imaging
+#### Nuclear medizin Imaging
 
 不展现解剖学anatomy结构，而是器官功能function。
 

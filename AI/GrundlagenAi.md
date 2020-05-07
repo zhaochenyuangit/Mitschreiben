@@ -553,7 +553,7 @@ $$
 forward部分与Filtering相同，只需要计算backward
 $$
 \begin{split}
-\bold P(e_{k+1:t}|X_k)&=\sum_{x_{k+1}}\bold P(e_{k+1:t},x_{k+1}|X_k)
+\textcolor{brown}{\bold P(e_{k+1:t}|X_k)}&=\sum_{x_{k+1}}\bold P(e_{k+1:t},x_{k+1}|X_k)
 \\&=\sum_{x_{k+1}} P(e_{k+1:t}|x_{k+1},\textcolor{red}{\not X_k})\cdot \bold P(x_{k+1}|X_k)
 \\&=\sum_{x_{k+1}}P(e_{k+1},e_{k+2:t}|x_{k+1})\bold P(x_{k+1}|X_k)
 \\&=\sum_{x_{k+1}}\underbrace{ \textcolor{green}{P(e_{k+1}|x_{k+1})}}_{发射矩阵}\textcolor{brown}{P(e_{k+2:t}|x_{k+1})}\underbrace{\textcolor{red}{\bold P(x_{k+1}|X_k)}}_{状态转移矩阵}
@@ -606,19 +606,49 @@ $$
 
 因此最可能的序列是T-F-F，在t=2时，虽然ES=T概率更高，但综合3天考虑后，最可能的序列不包括它。
 
+## Rational Decision
+
+<img src="img/decision1.PNG" alt="decision1" style="zoom:33%;" />  
+
+> X: 变量状态， d 之前的决定， 共同导出当下决定D
+
+大多数情况下可写作partial ordering，即X与D依次出现。$X_0\lt D_1\lt X_1 \lt D_2 \cdots$
+
+* fundamental information: 去除后会改变partial ordering 的结点
+
+* Expected Utility$EU=\sum\limits_{s'}P(s'|a,\bold e)U(s')$，即所有可能结果的收益按概率加权平均
+
+> 结果s'=采取行动a的结果, $\bold e$为观测到的信息。U(s')为结果为s'时收益
+
+* 最佳expected Utility $MEU=\textcolor{red}{\max\limits_a}\sum\limits_{s'}P(s'|a,\bold e)U(s')$，多加了max，只要最佳行动a带来的最佳收益
 
 
 
+* 一条新信息的价值Value of Information (VOI)$=\left(\sum\limits_{k}P(E_j=e_{jk}|\bold e)\mathop{MEU}(a_{e_{jk}}|\bold e,E_j=e_{jk})\right)-MEU(a|\bold e)$
+
+即给一条新信息，先假装这条新信息不花钱，计算有了新信息后最佳Expected Utility，减去原来没有这条信息时最佳Utility
+
+| <img src="img/roadexample1.PNG" alt="roadexample1" style="zoom:50%;" /> | <img src="img/roadexample2.PNG" alt="roadexample2" style="zoom:50%;" /> | <img src="img/roadexample3.PNG" alt="roadexample3" style="zoom:50%;" /> |
+| ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| U1永远好过U2，新信息不值得                                   | U1U2方差大（上下限悬殊），且比较接近，此时新信息比较有用     | U1U2方差小，差也差不到哪里去，新信息不值得                   |
+
+Value iteration——Bellman Equation：假设$U_0$（任意值）逐步迭代计算得到收敛值
+
+$U^{i+1}(s)=R(s)+\gamma\max\limits_{a\in A(s)}\sum\limits_{s'}P(s'|a)U^i(s')$
+
+> R(s): 当前收益
+>
+> $\max\limits_{a\in A(s)}\sum\limits_{s'}P(s'|a)U^i(s')$未来最佳收益
+>
+> $\gamma$衰减系数
 
 
 
+Policy Evaluation：这个行动可能不是最优的，但就想看看其收益如何。不知道$U_0 $
 
+$U_{i}(s)=R(s)+\gamma\cdot\sum\limits_{s'}P(s'|a)U_i(s')$，（公式中没有max）
 
-
-
-
-
-
+收敛原理：如果有两种近似方法$U^t$与$V^t$，则$||U^{t+1}-V^{t+1}||\le\gamma||U^t-V^t||$，即不同近似方式均向真值靠拢$||U^{t+1}-U^t||\lt\varepsilon,||U^{t+1}-U^{真值}||\lt2\varepsilon\gamma/(1-\gamma)$
 
 
 
