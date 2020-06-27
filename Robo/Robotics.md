@@ -100,7 +100,7 @@ $\ ^x\bold p=\ ^x_y\bold T\cdot\ ^y\bold p$ 指y在x中的坐标。将多个$\bo
 
 ##### 平面机器人
 
-<img src="E:\git_zhao\Mitschreiben\Robo\img\3R planar robot.PNG" alt="3R planar robot" style="zoom:50%;" />
+<img src=".\img\3R planar robot.PNG" alt="3R planar robot" style="zoom:50%;" />
 
 平面机器人可以一眼看出末端坐标，不需要写标准DH变换矩阵
 $$
