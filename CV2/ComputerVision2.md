@@ -36,7 +36,7 @@ $u^TAv=(v\otimes u)^TA^s$
 
 <img src="img/Group.PNG" style="zoom: 50%;" />
 
-对矩阵来说，必须满足①乘法$\forall A,B\in G, AB\in G$ 以及 ③ 单位矩阵 $Id\in G$
+对矩阵来说，必须满足条件①乘法封闭$\forall A,B\in G, AB\in G$ 以及条件③ 包含单位矩阵 $Id\in G$
 
 General Linear **GL(n)**： 所有可逆实数方阵$R^{n\times n}, det(A)\neq0$
 
@@ -331,6 +331,8 @@ $\det(M)=(G*\alpha^2)^2*0=0$，无法判断任何一个方向
 * Epipole Line: $l_1,l_2$
 * Epipole plane: $Xo_1o_2$
 
+#### Epipolar constraint
+
 从这两个角度拍摄的照片一定满足Epipolar Constraint：$x_2^T\hat TRx_1=0$， 其中Essential Matrix $E\triangleq\hat TR$
 
 > 证明：$\lambda_1x_1=X,\lambda_2x_2=RX+T=R(\lambda_1x_1)+T$
@@ -464,4 +466,89 @@ $$
 $\lambda x'=K\Pi_0g\bold X=(KR,KT)\bold X=K\lambda x$，∴$x=K^{-1}x'$
 
 $x_2^T\hat TRx_1=(K^{-1}x_2')^T\hat TR(K^{-1}x_1)=x_2'^T\underbrace{K^{-T}\hat TRK^{-1}}_{\bold F}x_1$
+
+## 六、多图重建
+
+#### 点的重建
+
+点的成像与3D位置的关系为$\lambda_i\bold x_i=\Pi_i\bold X_i$，其中$\Pi=K_sK_f\Pi_0g\in\mathbb R^{3\times4}$
+
+如果现在有N张照片，就有$\underbrace{\begin{pmatrix}x_1\\&x_2\\&&\ddots\\&&&x_n\end{pmatrix}}_{\mathcal I已知}\cdot\underbrace{\begin{pmatrix}\lambda_1\\\lambda_2\\\vdots\\\lambda_n\end{pmatrix}}_{\vec\lambda未知}=\underbrace{\begin{pmatrix}\Pi_1\\\Pi_2\\\vdots\\\Pi_n\end{pmatrix}}_{\Pi未知}\cdot\underbrace{\bold X}_{未知} $ →①式
+
+设$N_p\triangleq(\Pi,\mathcal I)=\begin{pmatrix}\Pi_1&x_1\\\Pi_2&&x_2\\\vdots&&&\ddots\\\Pi_m&&\cdots&&x_m\end{pmatrix}\in\mathbb R^{3m\times(m+4)}$
+
+* $rank(N_p)\le m+3$（证明略）
+
+在①式两边各乘$\mathcal I^\bot=\begin{pmatrix}\hat x_1\\&\hat x_2\\&&\ddots\\&&&\hat x_n\end{pmatrix}$，因为$\hat x\vec x=0$，∴$\mathcal I^\bot\mathcal I=0$，①式变为 $\underbrace{\mathcal I^\bot\Pi}_{W_p}\bold X=0$
+
+$W_p=\mathcal I^\bot\Pi=\begin{pmatrix}\hat x_1\Pi_1\\\hat x_2\Pi_2\\\vdots\\\hat x_m\Pi_m\end{pmatrix}$ 所有$\hat x_i$秩均为2,共有m张照片，因此公式$W_p\bold X=0$共有2m个约束。
+
+* $rank(W_p)= rank(N_p)-m\le 3$ （证明略）
+
+要得到$\bold X$唯一解，$W_p$秩必须为3。秩为4时无解。小于3时得不到唯一解
+
+设$D_p=\begin{pmatrix}\hat x_1&\vec x_1&0\\0&0&1\end{pmatrix}=\begin{pmatrix}\begin{pmatrix}\ddots\\&3\\&&\ddots\end{pmatrix}&\begin{pmatrix}\vdots\\3\\\vdots\end{pmatrix}&\begin{pmatrix}0\\0\\0\end{pmatrix}\\\begin{pmatrix}0&0&0\end{pmatrix}&0&1\end{pmatrix}\in\mathbb R^{4\times 5}$
+$$
+W_pD_p=\begin{pmatrix}\hat x_1\Pi_1\\
+\hat x_2\Pi_2\\\vdots\\\hat x_m\Pi_m\end{pmatrix}
+\begin{pmatrix}\hat x_1&\vec x_1&0\\0&0&1\end{pmatrix}
+\\=
+\begin{pmatrix}\hat x_1(1,0)\\
+\hat x_2(R_2,T_2)\\\vdots\\\hat x_m(R_m,T_m)\end{pmatrix}
+\begin{pmatrix}\hat x_1&\vec x_1&0\\0&0&1\end{pmatrix}
+\\=\begin{pmatrix}
+\hat x_1\hat x_1&0&0
+\\
+\hat x_2R_2\hat x_1&\hat x_2R_2\vec x_1&\hat x_2T_2
+\\
+&\vdots
+\\
+\hat x_mR_m\hat x_1&\hat x_mR_m\vec x_1&\hat x_mT_m
+\end{pmatrix}
+$$
+
+> $D_p$满秩，所以$rank(W_pD_p)=rank(W_p)\le3$，而$\hat x_1\hat x_1$两个反对称阵相乘这一列秩已经有2了，意味着右下角小矩阵秩最多只有1
+
+记$M_p=\begin{pmatrix}\hat x_2R_2\vec x_1&\hat x_2T_2
+\\
+\vdots&\vdots
+\\
+\hat x_mR_m\vec x_1&\hat x_mT_m\end{pmatrix}\in\mathbb R^{3(m-1)\times2}$，秩≦1。而$M_p$只有两列，检察秩是否为1只需要看$M_p$的两列是否为线性关系。
+
+> $rank(M_p)=1\implies$存在唯一重建
+
+#### 分析
+
+想要有唯一解，$M_p$两列必须线性相关。所以 $\lambda_1\begin{pmatrix}\hat x_2R_2\vec x_1
+\\
+\vdots
+\\
+\hat x_mR_m\vec x_1\end{pmatrix}+\begin{pmatrix}\hat x_2T_2
+\\
+\vdots
+\\
+\hat x_mT_m\end{pmatrix}=0$，即$M_p\cdot\begin{pmatrix}\lambda_1\\1\end{pmatrix}=0$
+
+这个系数$\lambda_1$实际就是第一张照片的深度信息，在二图重建时这个信息是没有的，但多图重建可以获取
+
+> $\hat x_iR_i\vec x_1=x_i\times(Rx_1)=\vec{o_ix_i}\times\vec{o_1x_1}$，而$\hat x_iT_i=x_i\times T_i=\vec{o_ix_1}\times\vec{o_1o_i}$，这两个向量呈线性关系说明它们垂直的面是同一个，再次证明了二图重建时推导的Epipolar Constraint
+
+<img src="img/epipolar.PNG" alt="Epipolar" style="zoom:60%;" />
+
+而且，现在m条方程之间都要呈线性关系，约束更强了。符合的是trilinear constraints： $\hat x_i(T_ix_1^TR_j^T-R_ix_1T_j^T)\hat x_j=0$，表现三张照片（$1,i,j$）之间的关系。（证明略）
+
+j个点，i张照片的情况下，每一行都有约束$\lambda_1^j\hat x_i^jR_i^j\vec x_1^j+\hat x_i^jT_i^j\implies\hat x_i^jR_i^j\vec x_1^j+\underbrace{\frac1{\lambda_i^j}}_{a^j}\hat x_i^jT_i^j$
+
+> 上式也可理解为$\lambda_ix_i=R_i(\lambda_1x_1)+T_i$两边同乘$\hat x_i $得$0=\lambda_1\hat x_iR_ix_1+\hat x_iT_i\implies\hat x_iR_ix_1+\frac1{\lambda_1}\hat x_iT_i=0$
+
+$$
+\hat x_iR_i\vec x_1+a^j\hat x_iT_i=0
+\\
+\begin{bmatrix}\vec x_1^j\otimes\hat x_i^j&a^j\hat x_1^j\end{bmatrix}
+\cdot\begin{bmatrix}R_i^s\\T_i\end{bmatrix}=0
+$$
+
+$R_i,T_i$与$a^j$知道一个就可以推出另一个
+
+#### 线的重建
 
