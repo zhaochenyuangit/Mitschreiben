@@ -327,7 +327,7 @@ $\det(M)=(G*\alpha^2)^2*0=0$，无法判断任何一个方向
 
 ![Epipolar](img/epipolar.PNG)
 
-* Epipole: $e_1,e_2$
+* Epipole: $e_1,e_2$，$e_1$为相机位置$o_2$在1坐标中的投影，$e_2$为$o_1$在2坐标中投影
 * Epipole Line: $l_1,l_2$
 * Epipole plane: $Xo_1o_2$
 
@@ -485,6 +485,8 @@ $W_p=\mathcal I^\bot\Pi=\begin{pmatrix}\hat x_1\Pi_1\\\hat x_2\Pi_2\\\vdots\\\ha
 
 * $rank(W_p)= rank(N_p)-m\le 3$ （证明略）
 
+##### 点的秩约束 rank constraint
+
 要得到$\bold X$唯一解，$W_p$秩必须为3。秩为4时无解。小于3时得不到唯一解
 
 设$D_p=\begin{pmatrix}\hat x_1&\vec x_1&0\\0&0&1\end{pmatrix}=\begin{pmatrix}\begin{pmatrix}\ddots\\&3\\&&\ddots\end{pmatrix}&\begin{pmatrix}\vdots\\3\\\vdots\end{pmatrix}&\begin{pmatrix}0\\0\\0\end{pmatrix}\\\begin{pmatrix}0&0&0\end{pmatrix}&0&1\end{pmatrix}\in\mathbb R^{4\times 5}$
@@ -517,7 +519,7 @@ $$
 
 > $rank(M_p)=1\implies$存在唯一重建
 
-#### 分析
+##### 分析
 
 想要有唯一解，$M_p$两列必须线性相关。所以 $\lambda_1\begin{pmatrix}\hat x_2R_2\vec x_1
 \\
@@ -544,11 +546,54 @@ j个点，i张照片的情况下，每一行都有约束$\lambda_1^j\hat x_i^jR_
 $$
 \hat x_iR_i\vec x_1+a^j\hat x_iT_i=0
 \\
-\begin{bmatrix}\vec x_1^j\otimes\hat x_i^j&a^j\hat x_1^j\end{bmatrix}
+\begin{bmatrix}{\vec x_1^j}^T\otimes\hat x_i^j&a^j\hat x_1^j\end{bmatrix}
 \cdot\begin{bmatrix}R_i^s\\T_i\end{bmatrix}=0
 $$
 
 $R_i,T_i$与$a^j$知道一个就可以推出另一个
 
 #### 线的重建
+
+线可以表示为$L=\{\bold X|\bold X=\bold X_0+\mu\bold V\}\in\mathbb R^4$ 其中$\bold X_0=\{X_0,Y_0,Z_0,1\}\in \mathbb R^4$为基点，$\bold V=\{V_1,V_2,V_3,0\}$为线的方向
+
+设$l$为该线Coimage（即该线Preimage平面P的法线），
+
+则$l$与所有点投影$\bold x$垂直：$l(t)^T\bold x(t)=0\implies l_i^T\Pi_i(\bold X_0+\bold V)=0\implies \underbrace{l_i^T\Pi_i}_{W_l}\bold X_0=0,\ \ l_i^T\Pi_i\bold V=0$
+$$
+\begin{array}{}
+W_l=\begin{pmatrix}l_1^T\Pi_1\\l_2^T\Pi_2\\\vdots\\l_m^T\Pi_m\end{pmatrix}
+\in\mathbb R^{m\times 4}=\begin{pmatrix}
+l_1^T&0\\l_2^TR_2&l_2^TT_2\\\vdots\\l_m^TR_m&l_m^TT_m\end{pmatrix}
+,rank(W_l)\le2(证明略)
+\\
+W_lD_l=\begin{pmatrix}
+l_1^T&0\\l_2^TR_2&l_2^TT_2\\\vdots\\l_m^TR_m&l_m^TT_m\end{pmatrix}
+\cdot\begin{pmatrix}l_1&\hat l_1&0\\0&0&1\end{pmatrix}
+=\begin{pmatrix}
+l_1^Tl_1&0&0
+\\l_2^TR_2l_1&l_2^TR_2\hat l_1&l_2^TT_2
+\\\vdots
+\\\underbrace{l_m^TR_ml_1}_{这一列有1个秩}&l_m^TR_m\hat l_1&l_m^TT_m
+\end{pmatrix}
+\\
+M_l=\begin{pmatrix}
+l_2^TR_2\hat l_1&l_2^TT_2
+\\\vdots
+\\l_m^TR_m\hat l_1&l_m^TT_m
+\end{pmatrix},rank(M_l)\le1
+\end{array}
+$$
+
+##### 线的秩约束
+
+$W_lD_l$秩与$W_l$相同均为2，而$W_lD_l$第一列肯定和二、三列线性无关，占一个秩。因此$M_l$最多就一个秩。
+
+这意味着$M_l$任意两行均呈线性关系：单看第一行有$l_i^TR_i\hat l_1\sim l_j^TR_j\hat l_1$，这说明$R_i^Tl_i,R_j^Tl_j,l_1$共面，可以推导出$l_1^TR_i\hat l_1R_j^Tl_j=0$
+
+且${l_i^TR_i\hat l_1\over l_j^TR_j\hat l_1}={l_i^TT_i\over l_j^TT_j}$可化为$(l_j^TT_j)\cdot(l_i^TR_i\hat l_1)-(l_i^TT_i)\cdot(l_j^TR_j\hat l_1)=0$
+
+> $l_i^TT_i$一定不能为0，否则说明相机没有动，三个Preimage其实是同一个平面。此时$rank(M_l)=0$
+
+> $W_l=\begin{pmatrix}l_1^T\Pi_1\\l_2^T\Pi_2\\\vdots\\l_m^T\Pi_m\end{pmatrix}
+> \in\mathbb R^{m\times 4}$当$m\gt2$时，$W_l$的秩仍要小于等于2（秩约束）。但若$m=2$，则秩约束自动满足。这是由线的几何意义决定的：两条线的Preimage为两个面，总能在空间中相交于一条线，而点的Preimage为两条线，就不一定能恰好相交于空间中一点。
 

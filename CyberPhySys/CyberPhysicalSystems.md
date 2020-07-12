@@ -197,6 +197,8 @@ Scope： 一条Transition的Scope为囊括它起点与终点的**最低一层XOR
 
 ## 五、Discrete System Verification
 
+
+
 ## 六、连续系统建模与仿真
 
 ##### 非线性ODE解析解 Seperation of variables
@@ -315,3 +317,96 @@ PD控制器可以稳定系统，但存在稳态误差$\lim_{t\to\infty}y(t)-r(t)
 可以引入$K_I$来消除稳态误差：
 
 $G(s)=\large{\frac{K(1+b_1s+\cdots+b_ws^w)}{s^m(1+a_1s+\cdots+a_us^u}}$，如果本身有一个极点就不需要$K_I$，只有分母上没有S的0态系统需要额外加一个S在分母上。
+
+**root-locus?**
+
+##　九、多输入多输出系统
+
+#### State feedback control 
+
+适用于：有多个输入输出且状态变量之间有关联
+
+$u=x_d-K\cdot x$
+
+<img src="img/Statefeedback.PNG" style="zoom:60%;" />
+
+限制：状态量$\vec x$必须直接知道，不能再用传感器测量值
+$$
+\begin{array}{}
+\dot x&=Ax+Bu
+\\&=Ax+B(x_d-Kx)
+\\&=(A-BK)x+B\cdot x_d
+\\&=A_cx+u_c
+\end{array}
+$$
+当系统完全可控时，可用这种方法得到任意响应（任意极点）的系统。
+
+#### 线性二次优化
+
+实际上由于物理限制不可能任意取极点，
+
+<img src="img/trapLimit.PNG" style="zoom:60%;" />
+
+要求最优极点是一个二次项最优方程：$J=\int_0^\infty \underbrace{x^TQx}_{状态偏离惩罚}+\underbrace{u^TRu}_{能量消耗惩罚}\ dt$，设$x_d=0$，所以$x$和$u$都是越小越好
+
+> 要使这个二次项积分有上限，二次项的终值必须为0 → x，u终值为0
+
+（证明略）最优解为$K=R^{-1}B^TP_+$，其中$P_+$为方程$PA+A^TP-PBR^{-1}B^TP+Q=0$的**正定，对称**解
+
+一般$Q=qI,R=I$，Q是必须的，R不是必须的
+
+Q也可以是$\begin{pmatrix}\underbrace{10}_{惩罚重}\\&\underbrace{1}_{惩罚轻}\\&&10\end{pmatrix}\begin{pmatrix}p\\v\\a\end{pmatrix}$，一般就设对角线元素就可以了
+
+#### Luenberger Observer
+
+一般情况下状态量还是隐藏的，只有测量值$y=Cx+Du$。要得到状态值可以用软件来模拟真实的物理系统，而软件中所有状态都是已知的。→用软件系统里的状态作为真实系统的状态返回值
+
+<img src="img/Luenberger.PNG" style="zoom:60%;" />
+$$
+\begin{array}{}
+u_B&=L(y-\hat y)
+\\&=L[(Cx+Du)-(C\hat x+Du)]
+\\&=LC(x-\hat x)
+\\\hat{\dot x}&=A\hat x+Bu+LC(x-\hat x)
+\\误差\tilde{\dot x}&=\dot x-\hat{\dot x}
+\\&=(Ax+Bu)-[A\hat x+Bu+LC(x-\hat x)]
+\\&=A(x-\hat x)-LC(x-\hat x)
+\\&=\underbrace{(A-LC)}_{A_0}\underbrace{(x-\hat x)}_{\tilde{\dot x}}
+\end{array}
+$$
+即可以任意选定一个L，使得$A_0=A-LC$观测状态量和实际值之间没有误差
+
+这也是一个优化问题：$J(\tilde x)=E(||\tilde x||)^2=\lim_{T\to\infty}\frac1{2T}\int_{-T}^T||\tilde x(t)||^2dt$
+
+$\begin{array}{l|l}\dot x=Ax+Bu+v&process\ error\\y=Cx+Du+w&传感器误差\end{array}$
+
+（证明略）最优解为$L=\Pi_+C^TW$
+
+其中，$\Pi_+$为等式$-A\Pi-\Pi A^T+\Pi C^TW^{-1}C\Pi=V$的**正定**解
+
+#### 合并任意控制与任意观测
+
+<img src="img/MIMOcombine.PNG" style="zoom:60%;" />
+$$
+\begin{array}{}\dot x&=Ax+B\overbrace{(x_d-K\hat x)}^{\bold u}
+\\&=Ax+Bx_d-BK\underbrace{\hat x}_{x-\tilde x}
+\\&=(A-BK)x+Bx_d+BK\tilde x
+\end{array}
+\\
+$$
+$\therefore[\dot x]=\begin{bmatrix}A-BK&BK\end{bmatrix}\begin{bmatrix}x\\\tilde x\end{bmatrix}+[B]x_d$ ①
+
+再加上观测矩阵的公式：$\tilde {\dot x}=(A-LC)\tilde x\implies[\tilde {\dot x}]=\begin{bmatrix}0&A-LC\end{bmatrix}\begin{bmatrix}x\\\tilde x\end{bmatrix}$②
+
+合并①②式可得
+$$
+\begin{bmatrix}\dot x\\\tilde{\dot x}\end{bmatrix}
+=\underbrace{\begin{bmatrix}\overbrace{A-BK}^{A_c}&BK\\0&\underbrace{A-LC}_{A_0}\end{bmatrix}}_{A_{co}}
+\cdot
+\begin{bmatrix}x\\\tilde x\end{bmatrix}
++\begin{bmatrix}B\\0\end{bmatrix}x_d
+$$
+计算$A_{co}$的特征值就是将$A_c$与$A_o$的特征值合并成一个集合
+
+$\det(\lambda I-A_{co})=\det[\lambda I-(A-BK)]\times\det[\lambda I-(A-LC)]=0$
+
