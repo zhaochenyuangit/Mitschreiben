@@ -353,6 +353,12 @@ $$
 
 （证明略）最优解为$K=R^{-1}B^TP_+$，其中$P_+$为方程$PA+A^TP-PBR^{-1}B^TP+Q=0$的**正定，对称**解
 
+$P_+=\begin{bmatrix}p_{11}&p_{12}\\p_{21}&p_{22} \end{bmatrix}$
+
+对称：$p_{12}=p_{21}$
+
+Sylvester`s criterion: $p_{11}=P_+小矩阵\gt0,p_{11}p_{22}-p_{12}^2=\det(P_+)\gt0$
+
 一般$Q=qI,R=I$，Q是必须的，R不是必须的
 
 Q也可以是$\begin{pmatrix}\underbrace{10}_{惩罚重}\\&\underbrace{1}_{惩罚轻}\\&&10\end{pmatrix}\begin{pmatrix}p\\v\\a\end{pmatrix}$，一般就设对角线元素就可以了
@@ -392,7 +398,7 @@ $$
 \\&=Ax+Bx_d-BK\underbrace{\hat x}_{x-\tilde x}
 \\&=(A-BK)x+Bx_d+BK\tilde x
 \end{array}
-\\
+\\
 $$
 $\therefore[\dot x]=\begin{bmatrix}A-BK&BK\end{bmatrix}\begin{bmatrix}x\\\tilde x\end{bmatrix}+[B]x_d$ ①
 

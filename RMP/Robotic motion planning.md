@@ -1,5 +1,159 @@
 # Robotic motion planning
 
+workspace：工作空间，真实空间
+
+configuration space: 机器可设置的空间
+
+表示机器人的两种方法：
+
+1. Point represent
+
+障碍物: 将工作空间中障碍物投射到c-space中（discrete colision test)
+
+参数：c-space中的$\theta_1,\theta_2,\cdots$
+
+适用于：机械臂
+
+2. padding of obstacles
+
+参数：$x,y,[\theta]$
+
+障碍物：在原障碍物上附加机器人的尺寸(geometry)
+
+适用于：点状机器人
+
+
+
+
+
+## 一、经典RMP方法
+
+### （一）、BUG算法
+
+假设机器人为一个点，利用零距离传感器（zero range sensor）前往目标。
+
+一定能到达终点，但是只适用于简单的二维地图
+
+#### Bug1
+
+遇到障碍物时记下遭遇位置$q_i^H$：Hit point
+
+绕障碍物一圈确定障碍物上离终点最近的一点$q_i^L$：Leave point
+
+m-line: 连接$q_i^L$与$q_{goal}$
+
+如果m-line与当前障碍物相交说明在被障碍物封在内部，即可确定没有可行的路线
+
+> 若前进路线只是蹭过障碍则没有必要执行算法，直接继续前进即可
+
+$$
+L_{Bug_1}\le d(q_{start},q_{goal})+\underbrace{1.5\sum_{i=1}^np_i}_{探索一倍周长+最坏情况下再走一半周长}
+$$
+
+<img src="img/BUG1.PNG" style="zoom:60%;" />
+
+#### Bug2
+
+m-line：固定为$q_{start}$到$q_{goal}$
+
+相当于是在同一条m-line上找离终点更近的点，只要再次碰到m-line就离开障碍物。
+
+如果再次遭遇m-line与障碍物相交的同一点则可确定不可行
+$$
+L_{Bug_2}\le d+0.5\sum_{i=1}^n \underbrace{n_i}_{同一个障碍物\\遭遇n次}p_i
+$$
+
+
+<img src="img/BUG2.PNG" style="zoom:60%;" />
+
+#### Tagent Bug
+
+假设不再是零距离传感器而是有一点探测范围的传感器
+
+这个传感器360度都可探测 $\rho_R(x,\theta)$
+
+<img src="img/tagentBug.PNG" style="zoom: 80%;" />
+
+当传感器刚刚探测到障碍物时，传感器半径与障碍物相切 → Tagent正切
+
+之后相切点分裂为相交段曲线，有两个端点$O_i$
+
+<img src="img/tagentBug2.PNG" style="zoom:60%;" />
+
+**状态一 Motion to go**
+
+先前往终点，
+
+如果前往终点的路径受阻，则会按Heuristic决定前往哪一个$O_i$作为subgoal
+
+Heuristic比如：$h(x)=d(x,O_i)+d(O_i,q_{goal})$
+
+直到无法再减小$h(x)$说明正要远离终点，此刻来到了local minimum，记为$M_i$，由motion-to-go算法转为follow-boundary 算法
+
+**状态二 follow boundary**
+
+沿障碍物表面法线方向$n(x)^\perp$前进
+
+记录$d_{followed}$：目前这个障碍物边界上**曾经记录过**离终点最近的距离
+
+$d_{reach}=\min_{c\in\Lambda}d(q_{goal},c)$：目前探测范围内障碍物上到终点最近距离
+
+当$d_{reach}\lt d_{followed}$时离开障碍物，leave point 记为$L_i$，由follow boundary 算法变回motion to go 算法
+
+### （二）、Roadmap
+
+Grid View：画出图中每个像素可达性，但要任作连续运动需要考虑一条运动路线上所有的点
+
+* shortest-path
+
+算法wave-front planner
+
+<img src="img/wavefront.PNG" style="zoom: 33%;" />
+
+* maximum clearance 离障碍物最大距离
+
+算法brushfire-planner: 得到Voronoi diagram
+
+<img src="img/brushfire.PNG" style="zoom:60%;" />
+
+<img src="img/voronioDiagram.PNG" style="zoom:60%;" />
+
+### （三）、Cell Decomposition
+
+* trapezoidal decomposition
+
+每次遇到障碍物的端点都画竖线。
+
+<img src="img/trap_decomposition.PNG" style="zoom:60%;" />
+
+*   Boustrophedon Decomposition → Canny\`s Method 
+
+<img src="img/cannysMethod.PNG" style="zoom:60%;" />
+
+只在存在岔路的地方画竖线（线段两端都能沿伸）
+
+### （四）、Potential Field
+
+把机器人当作是在gradient vector filed中移动的微粒
+
+障碍：positive charge
+
+目标：negative charge
+
+能量的梯度为机器人受到的力$\dot c(t)=-\nabla U(c(t))$，当梯度=0时导航结束，梯度为0的点称为critical point
+
+一般只考虑Hessian矩阵非奇异的势能方程，这种情况下所有的critical points均孤立。意思是一个点要么是极值点，要么是鞍点，不会出现成片梯度为0的区域。
+
+> Hessian正定（有极小）还是负定（有极大）不重要，因为势能法下机器人总是往势能最低处走，总是能找到一个极小值
+
+
+
+
+
+
+
+## 二、 PRM
+
 
 
 ## 三、Kalman滤波
@@ -182,7 +336,7 @@ x_k=\begin{bmatrix}\vec x_R=\begin{pmatrix}x\\y\\\theta\end{pmatrix}
 \\\vec x_{L_2}
 \\\vdots
 \\\vec x_{L_N}
-\end{bmatrix}
+\end{bmatrix}
 $$
 协方差矩阵也融入这些信息
 $$
