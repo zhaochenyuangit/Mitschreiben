@@ -14,7 +14,7 @@
 
 正交 $<v,w>=0$
 
-* kron乘积
+* kron乘积，向量外积的矩阵推广
 
 $$
 A^{\in R^{m\times n}}\otimes B^{\in R^{k\times l}}\equiv\begin{pmatrix}
@@ -30,7 +30,7 @@ $$
 A\in R^{m\times n}\implies A^s\in R^{mn\times1}
 $$
 
-$u^TAv=(v\otimes u)^TA^s$
+* kron乘积与列向量叠加合用可以将$u^TAv=(v\otimes u)^TA^s$ 化为向量内积形式。
 
 * Group, 需要满足以下条件
 
@@ -64,6 +64,16 @@ Special Euclidean **SE(n)**：$\begin{pmatrix}R\in SO(n)&T\\0&1\end{pmatrix}$，
 
 唯一解条件：kernel(A)={0}, kernel(A)$=\{x\in R^n|Ax=0\}$， 否则$A(x_s+x_0)=Ax_s+Ax_0=b+0=b$，任何解都可以加上x0成为无数解。
 
+> 有矩阵A，A的Range与Kernel分别为：
+>
+> range = span$\left\{\begin{pmatrix}1\\0\\0\end{pmatrix},\begin{pmatrix}0\\0\\1\end{pmatrix}\right\}$
+>
+> kernel = span$\left\{\begin{pmatrix}1\\0\\-1\\0\end{pmatrix},\begin{pmatrix}0\\2\\0\\-1\end{pmatrix}\right\}$
+>
+> 由Kernel可得两个特解：$y_1=\begin{pmatrix}1\\0\\1\\0\end{pmatrix},y_2=\begin{pmatrix}0\\1\\0\\2\end{pmatrix}$
+>
+> 则A的一个可能的矩阵为：$u_1y_1^T+u_2y_2^T=\begin{pmatrix}1&0&1&0\\0&0&0&0\\0&1&0&2\end{pmatrix}$
+
 * 特征值 $\tilde A\vec v=\lambda\vec v$
 
 计算$det(\lambda I-A)=0$
@@ -95,15 +105,29 @@ A=U^{m\times p}\Sigma^{p\times p}V^{Tp\times n}
 \\
 $$
 
-pseudo-inverse: $A^\dagger=V\Sigma^\dagger U^T,\Sigma^\dagger=\begin{pmatrix}\Sigma^{-1}&0\\0&0\end{pmatrix}_{n\times m}$
+```matlab
+[U,S,V]=svd(A)
+```
 
-当$Ax=b$无解时，依然可以得到$x_\min=A^\dagger b$为使$|Ax-b|$最小的$\vec x$中模最小的
+由SVD分解得到的伪逆矩阵称为Moore-Penrose pseudo-inverse: $A^\dagger=V\Sigma^\dagger U^T,\Sigma^\dagger=\begin{pmatrix}\Sigma^{-1}&0\\0&0\end{pmatrix}_{n\times m}$，$\Sigma^{-1}$为将$\Sigma$对角线上元素依次取倒数再转置，即$\Sigma^{-1}=\Sigma^{-T}$。
+
+**不论A的形状如何**，当$Ax=b$无解时，依然可以得到$x_\min=A^\dagger b$为使$|Ax-b|^2$最小的$\vec x$中模最小的。
+
+> 而一般的左逆伪逆矩阵是$A^\dagger=(A^TA)^{-1}A^T$，要求矩阵$A\in\mathbb R^{m\times n}, m\lt n$且列满秩（因为$A^TA\in\mathbb R^{n\times n}$，如果n不满秩那么依然无法求逆）
 
 ## 二、表示相机移动
 
 对相机来说，旋转矩阵一定是一个$SO(3)=\{R\in\mathbb R^{3\times 3}|R^TR=I,det(R)=+1\}$，再加上平移就成为$SE(3)$
 
-可以表示为$x(t)=R(t)\cdot x_{origin}$，每时每刻的旋转矩阵不同
+> 先旋转再平移：$\begin{pmatrix}I&T\\0&1\end{pmatrix}\cdot\begin{pmatrix}R&0\\0&1\end{pmatrix}=\begin{pmatrix}R&T\\0&1\end{pmatrix}$
+>
+> 先平移再旋转：$\begin{pmatrix}R&0\\0&1\end{pmatrix}\cdot\begin{pmatrix}I&T\\0&1\end{pmatrix}=\begin{pmatrix}R&RT\\0&1\end{pmatrix}$
+>
+> 所以只有先旋转再平移才能有常见的表达形式
+
+#### 只有旋转的情况
+
+空间中点的位置可以表示为$x(t)=R(t)\cdot x_{origin}$，每时每刻的旋转矩阵不同。
 
 然而，要建立一个SO(3)太复杂，把它转化到 Lie Algebra变为线性空间好操作。
 $$
@@ -209,7 +233,46 @@ $$
 
 $\bold {\dot X}=\dot g(t)\bold X_0=\dot g(t)g^{-1}(t)\bold X(t)=\begin{pmatrix}\hat w&\vec v\\0&0\end{pmatrix}\bold X(t)=\hat w(t)\bold X(t)+\vec v(t)\bold X(t)$
 
+#### 在MATLAB中表示点的运动
+
+```matlab
+V = Verticles % in (n,3) .
+centroid = mean(V)';
+t_zero = zeros(3, 1);
+V_homo = [V ones(size(V,1) 1)]';%
+%{V_homo = 	x	...	x_n
+			y	...	y_n
+			z	...	z_n
+            1	1	1
+%} % in (4,n)
+
+T = SE3(eye(3), t) * ...
+        SE3(eye(3), centroid) * ... 
+        SE3(rotmatz(angles(3)), t_zero) * ...
+        SE3(rotmaty(angles(2)), t_zero) * ...
+        SE3(rotmatx(angles(1)), t_zero) * ...
+        SE3(eye(3), -centroid);
+V_trans = T*V_homo;% T: Transfer in (3,4)
+% sometimes the last element is not 1, then divide it
+% if it is 1, simply drop it
+V = V_homo(1:3,:)'/V_homo(4,:)';
+
+```
+
+$$
+T = \underbrace{\begin{pmatrix}1&t\\0&1\end{pmatrix}}_{平移}
+\underbrace{\begin{pmatrix}1&\bold {\bar x}\\0&1\end{pmatrix}}_{回置原点}
+\underbrace{\begin{pmatrix}R_z&0\\0&1\end{pmatrix}
+\begin{pmatrix}R_y&0\\0&1\end{pmatrix}
+\begin{pmatrix}R_x&0\\0&1\end{pmatrix}}_{旋转}
+\underbrace{\begin{pmatrix}1&-\bold {\bar x}\\0&1\end{pmatrix}}_{旋转前要将坐标重置为0}
+$$
+
+
+
 ## 三、透视法投影
+
+#### 几何原理
 
 薄透镜成像公式为$\frac{Y}{Z}=-\frac{y}{f}\iff y=-f\frac{Y}{Z}$
 
@@ -231,29 +294,56 @@ f&&&0
 \\∴Z\bold x&\triangleq\lambda\bold x=K_f\Pi_0\bold X
 \end{array}
 $$
+此处用常数$\lambda$代替深度$Z$，因为对单个点来说深度是定值
+
+#### 推导步骤
+
 将一个3D点投影到2D画布 (image plane)上：
 
-1. 将点从世界坐标转移到相机内坐标 $\bold X=g\bold X_0=\begin{pmatrix}R&T\\0&1\end{pmatrix}\cdot \bold X_0$
-2. 将3D坐标投映到2D画布 $\lambda\bold x=K_f\Pi_0g\bold X_0$
+> 1. 将点从世界坐标转移到相机内坐标 $\bold X=g\bold X_0=\begin{pmatrix}R&T\\0&1\end{pmatrix}\cdot \bold X_0$
+> 2. 将3D坐标投映到2D画布 $\lambda\bold x=K_f\Pi_0g\bold X_0$
+>
+> 如果画布内单位长度为焦距f则可以省略$K_f$：$\lambda\bold x = \Pi_0g\bold X_0$
+>
+> 3. 转换到像素坐标系
+>
+> <img src="img/Ks.PNG" style="zoom:60%;" />
+> $$
+> K_S\triangleq\begin{pmatrix}s_x&s_\theta&o_x
+> \\0&s_y&o_y
+> \\0&0&1
+> \end{pmatrix}
+> $$
+>
+> * $s_\theta$一般为0，除非像素不是方形
+> * $s_x,s_y$缩放，$o_x,o_y$平移
+>
+> 固有参数矩阵$K=K_sK_f=\begin{pmatrix}fs_x&fs_\theta&o_x\\0&fs_y&o_y\\0&0&1\end{pmatrix}$
 
-如果画布内单位长度为焦距f则可以省略$K_f$：$\lambda\bold x = \Pi_0g\bold X_0$
+结论： 若设$\Pi=K_sK_f\Pi_0g\in\mathbb R^{3\times 4}$，有$\lambda\bold x=\Pi\bold X_0$
 
-3. 转换到像素坐标系
-
-<img src="img/Ks.PNG" style="zoom:60%;" />
+通常情况下，矩阵$K_s$中所有缩放系数都为1，此时固有矩阵为$K=\begin{pmatrix}f&&o_x\\&f&o_y\\&&1\end{pmatrix}$
 $$
-K_S\triangleq\begin{pmatrix}s_x&s_\theta&o_x
-\\0&s_y&o_y
-\\0&0&1
-\end{pmatrix}
+\begin{array}{}\end{array}\lambda\begin{pmatrix}u\\v\\1\end{pmatrix}
+=\begin{pmatrix}f&&o_x\\&f&o_y\\&&1\end{pmatrix}\cdot\begin{pmatrix}x\\y\\z\end{pmatrix}
+\\\therefore u=\frac{f\cdot x+o_x\cdot z}{z}=\frac{f\cdot x}z+o_x
+\\v=\frac{f\cdot y+o_y\cdot z}{z}=\frac{f\cdot y}z+o_x
+$$
+generic projection:
+$$
+\begin{pmatrix}u\\v\\1\end{pmatrix}=
+K\cdot\begin{pmatrix}\pi(\tilde x)\\1\end{pmatrix}
+=\begin{pmatrix}f&&o_x\\&f&o_y\\&&1\end{pmatrix}
+\cdot\begin{pmatrix}x/z\\y/z\\1\end{pmatrix}
+$$
+parallel projection:
+$$
+\begin{pmatrix}u\\v\\1\end{pmatrix}=
+K\cdot\begin{pmatrix}\pi(\tilde x)\\1\end{pmatrix}
+=\begin{pmatrix}f&&o_x\\&f&o_y\\&&1\end{pmatrix}
+\cdot\begin{pmatrix}x\\y\\1\end{pmatrix}
 $$
 
-* $s_\theta$一般为0，除非像素不是方形
-* $s_x,s_y$缩放，$o_x,o_y$平移
-
-固有参数矩阵$K=K_sK_f=\begin{pmatrix}fs_x&fs_\theta&o_x\\0&fs_y&o_y\\0&0&1\end{pmatrix}$
-
-设$\Pi=K_sK_f\Pi_0g\in\mathbb R^{3\times 4}$，有$\lambda\bold x=\Pi\bold X_0$
 
 #### preimage
 
@@ -279,7 +369,10 @@ image = preimage ∩ image plane
 
 #### Lucas-Kanade 方法
 
-Optic Flow： 假设在这一段微小的位移内，一个点的光照强度不变。
+Optic Flow Assumption： 
+
+1. 假设在这一段微小的位移内，(constraint motion in a neighborhood)
+2. 一个点的光照强度不变。(brightness constancy)
 
 则光照强度可以由两个因素引起：位置变化（物体运动或相机运动）和时间。
 
@@ -299,14 +392,45 @@ E(v)&=\textcolor{red}{\int}|\nabla I^T\vec v+I_t|^2\textcolor{red}{dx'}
 \frac{d}{dv}E&=2\underbrace{\textcolor{red}{\int}\nabla I\nabla I^T\textcolor{red}{dx'}}_{M}\vec v
 +2\underbrace{\textcolor{red}{\int}I_t\nabla I^T\textcolor{red}{dx'}}_{q}\doteq0
 \\&\equiv2M\vec v+2q\doteq 0
-\\\hline&\therefore \vec v=-M^{-1}q
+\\\hline&\therefore \vec v=-M^{-1}q=-\frac1{\det M}
+\begin{pmatrix}m_{22}&-m_{12}\\-m_{21}&m_{11} \end{pmatrix}\begin{pmatrix}q_1\\q_2\end{pmatrix}
+=\frac1{m_{12}^2-m_{11}m_{22}}\begin{pmatrix}m_{22}q_1-m_{12}q_2\\m_{11}q_2-m_{12}q_1\end{pmatrix}
 \end{array}
 $$
 其中$M(x)=\int_{W(x)}\begin{pmatrix}I_x^2&I_xI_y\\I_xI_y&I_y^2\end{pmatrix}dx', q=\int_{W(x)}\begin{pmatrix}I_xI_t\\I_yI_t\end{pmatrix}dx'$
 
+```matlab
+I1=im2double(imread(file)) ;
+I1 = rgb2gray( I1 ) ;
+% I2 analoguely
+% spatial gradient using central differences
+% use I1 here since we compute flow for I1
+Ix = 0.5*(I1(:,[2:end end]) - I1(:,[1 1:end-1]));
+Iy = 0.5*(I1([2:end end],:) - I1([1 1:end-1],:));
+
+% temporal gradient with forward differences
+It = I2 - I1;
+
+k = ceil(4*sigma+1); % 4-sigma -> 95% of the useful neighbors
+G = fspecial('gaussian', k, sigma);
+
+M11 = conv2(Ix .* Ix, G, 'same');
+M12 = conv2(Ix .* Iy, G, 'same'); % M21 is same as M12
+M22 = conv2(Iy .* Iy, G, 'same');
+
+q1 = conv2(Ix .* It, G, 'same');
+q2 = conv2(Iy .* It, G, 'same');
+```
+
+
+
+#### aperture problem
+
 矩阵M表明窗口内梯度方向，当且仅当x、y方向梯度都不是常数，即M有两个特征值，$det(M)\neq0$的时候，可以确定移动向量。若M仅有一个特征值，意味着无法确定该方向的位移。
 
 <img src="img/apertureProblem.PNG" style="zoom:60%;" />
+
+**aperture problem 举例：**
 
 若$\nabla I (x',t)$在窗口内任意位置都是常数，即$\nabla I=\alpha\vec u$时，$M=G*(\nabla I\nabla I^T)=G*\alpha^2\vec u\vec u^T=G*\alpha^2\underbrace{\begin{pmatrix}u_1^2&u_1u_2\\u_1u_2&u_2^2\end{pmatrix}}_{\det=0}$
 
@@ -322,18 +446,25 @@ $\det(M)=(G*\alpha^2)^2*0=0$，无法判断任何一个方向
 
 两个任务同时进行：
 
-1. 要估计相机运动， Motion of Camera，包括R与T
+1. 要估计相机运动(Motion of Camera)，包括R与T
 2. 同时又要估计原始点X在3D空间中的位置
 
 ![Epipolar](img/epipolar.PNG)
 
 * Epipole: $e_1,e_2$，$e_1$为相机位置$o_2$在1坐标中的投影，$e_2$为$o_1$在2坐标中投影
+
+> $o_2=R\cdot o_1+T$
+>
+> 坐标1→2：$\begin{bmatrix}R&T\\0&1\end{bmatrix}$，坐标2→1：$\begin{bmatrix}R^T&-R^TT\\0&1\end{bmatrix}$
+>
+> $\lambda_1 e_1=K\overrightarrow{o_1o_2}=K(-R^TT),\lambda_2 e_2=K\overrightarrow{o_2o_1}=KT$
+
 * Epipole Line: $l_1,l_2$
 * Epipole plane: $Xo_1o_2$
 
 #### Epipolar constraint
 
-从这两个角度拍摄的照片一定满足Epipolar Constraint：$x_2^T\hat TRx_1=0$， 其中Essential Matrix $E\triangleq\hat TR$
+从两个角度拍摄的照片一定满足Epipolar Constraint：$x_2^T\hat TRx_1=0$， 其中Essential Matrix $E\triangleq\hat TR$
 
 > 证明：$\lambda_1x_1=X,\lambda_2x_2=RX+T=R(\lambda_1x_1)+T$
 >
@@ -353,11 +484,51 @@ $\det(M)=(G*\alpha^2)^2*0=0$，无法判断任何一个方向
 
 $<x_2,T\times Rx_1>=0$说明$\vec{o_1X},\vec{o_2X},\vec{o_1o_2}$三个向量组成的空间体积为0，那么$\vec{o_1X},\vec{o_2X} $的确交汇于空间中某点X
 
-#### Essential Matrix 的特性
+**Essential Matrix**
 
-$E$只与相机自身运动有关，包含了运动信息$\hat T,R$
+令$E=\hat TR $，$E$只与相机自身运动有关，包含了运动信息$\hat T,R$
 
-$\hat TR=E=U\Sigma V^T$,$\Sigma$一定$diag\{\sigma,\sigma,0\},\sigma\gt0$
+E还可以SVD分解，$E=U\Sigma V^T$,其中$\Sigma$一定是$diag\{\sigma,\sigma,0\},\sigma\gt0$，即前两个特征值相等，第三个为0。
+
+#### 8点算法
+
+> 空间中N个点在两张照片上分别成像，未知数的个数为
+> $$
+> \begin{array}{cc|c}
+> R&T&X_i\cdots X_n
+> \\\hline3&3&3\times n
+> \end{array}=3n+6
+> $$
+
+1. 相机运动信息$E^s=\begin{pmatrix}\vec e_1\\\vec e_2\\\vec e_3\end{pmatrix}=\begin{pmatrix}e_{11}&e_{21}&e_{31}&e_{12}&e_{22}&e_{32}&e_{13}&e_{23}&e_{33}\end{pmatrix}^T\in\mathbb R^9$
+
+2. 同一点在一对照片上的信息
+
+   $\lambda x=KX\implies K^{-1}x=\lambda^{-1}X$，所以$K^{-1}x$就是空间中点的位移但是深度信息丢失。
+
+   $a\equiv\vec{x_1}\otimes\vec{x_2}=kron[(x_1^j,y_1^j,1),(x_2^j,y_2^j,1)]^T=\begin{pmatrix}x_1x_2&x_1y_2&x_1z_2&y_1x_2&y_1y_2&y_1z_2&z_1x_2&z_1y_2&z_1z_2\end{pmatrix}\in\mathbb R^{9}$
+
+   用这种方式可将epipolar constraint 表示为向量内积$x_2^TEx_1=a^TE^s=0$（$a^TE^s=0$说明$\vec a$与$E^s$正交）
+
+   
+
+3. 解方程$\chi E^s=0$，其中$\chi$为$E^s$的Null Space，需要8对点（8个$\vec a$向量），得到唯一解，$\chi=\begin{pmatrix}a^1&a^2&\cdots&a^n\end{pmatrix}^T\in\mathbb R^{n\times 9},n=8$
+
+   实际情况下由于测量误差，不可能得到8对点使得$\chi E^s$恰好为0。
+
+   此时就要计算$||\chi E^s||^2_\min=\min_{T,R}\sum_{j=1}^N(x_2^{jT}\hat TRx_1^j)^2$
+
+   为了得到唯一解，限制$||T||=1$（或任何常数）
+
+   
+
+4. 把$\chi$分解$=U_\chi\Sigma_\chi V_\chi^T$，**$E^s$必须为$V_\chi$的第九列**，对应$\Sigma_\chi$中最小的特征值
+
+   $E^s\in\mathbb R^9\implies E\in\mathbb R^{3\times 3}$
+
+   
+
+5. 分解$E=U\Sigma V^T=U\begin{pmatrix}\sigma_1\\&\sigma_2\\&&\sigma_3\end{pmatrix}V^T$，由于深度信息已经丢失，直接将$\Sigma$换为$\begin{pmatrix}1\\&1\\&&0\end{pmatrix}$
 
 只要有E就能算出$\hat T $与R，但一个E对应两组
 $$
@@ -366,28 +537,11 @@ $$
 \hat T_2,R_2=UR_z(-\frac\pi2)\Sigma U^T,UR_z^T(-\frac \pi2)V^T
 $$
 
-> $R_z(\pm\frac\pi2)=\begin{pmatrix}0&\mp1&0\\\pm1&0&0\\0&0&1\end{pmatrix}$，是一个旋转矩阵，特点：更换$\pm$号或者转置效果相同
+> $R_z(\pm\frac\pi2)=\begin{pmatrix}0&\mp1&0\\\pm1&0&0\\0&0&1\end{pmatrix}$，是一个旋转矩阵，特点：也是个反对称阵。
 >
-> 即$R_z^T(\pm\frac\pi2)=R_z(\mp\frac\pi2)$
+> ∴
 
 > 需要注意的是，由于$E=\hat TR$，如果$T=0$即相机没有平移，E就直接是0，在这种情况下是没有办法求出有意义的$T,R$组合的。
-
-#### 8点算法
-
-1. 相机运动信息$E^s=\begin{pmatrix}\vec e_1\\\vec e_2\\\vec e_3\end{pmatrix}=\begin{pmatrix}e_{11}&e_{21}&e_{31}&e_{12}&e_{22}&e_{32}&e_{13}&e_{23}&e_{33}\end{pmatrix}^T\in\mathbb R^9$
-2. 同一点在一对照片上的信息$a\equiv\vec{x_1}\otimes\vec{x_2}=\begin{pmatrix}x_1x_2&x_1y_2&x_1z_2&y_1x_2&y_1y_2&y_1z_2&z_1x_2&z_1y_2&z_1z_2\end{pmatrix}\in\mathbb R^{9}$
-
-用这种方式可将epipolar constraint 表示为向量内积$x_2^TEx_1=a^TE^s=0$
-
-$a^TE^s=0$说明$\vec a$与$E^s$正交
-
-解方程$\chi E^s=0$，其中$\chi$为$E^s$的Null Space，需要8对点（8个$\vec a$向量），得到唯一解，$\chi=\begin{pmatrix}a^1&a^2&\cdots&a^n\end{pmatrix}^T\in\mathbb R^{9\times n},n=8$
-
-实际情况下由于测量误差，不可能得到8对点使得$\chi E^s$恰好为0。此时就要计算$||\chi E^s||_\min$
-
-如果把$\chi$分解$=U_\chi\Sigma_\chi V_\chi^T$，**$E^s$必须为$V_\chi$的第九列**，对应$\Sigma_\chi$中最小的特征值
-
-3. 分解$E=U\Sigma V^T=U\begin{pmatrix}\sigma_1\\&\sigma_2\\&&\sigma_3\end{pmatrix}V^T$，由于不关心物体实际的尺寸大小，直接将$\Sigma$换为$\begin{pmatrix}1\\&1\\&&0\end{pmatrix}$
 
 > 由于$\chi E^s\neq0$，计算$||\chi E^s||_\min$时会得到两个$E^s$，绝对值相等，符号相反，都能使得$||\chi E^s||$最小
 >
@@ -395,9 +549,9 @@ $a^TE^s=0$说明$\vec a$与$E^s$正交
 >
 > 如何区分? → 找到所有点深度均为正的那一组 （Depth≧0）
 
-#### 求解尺寸系数
+#### 求解尺寸系数 
 
-获得了E，就知道了相机运动$\hat T,R$，但图像的尺寸仍然未知
+**Reconstruct of 3D points**：获得了E，就知道了相机运动$\hat T,R$，但图像的深度信息仍然未知
 
 对任意一个点在两张照片上的成像，有$\lambda_2^j\vec{x_2^j}=\lambda_1^jR\vec x_1^j+\gamma T$，其中$\gamma,\lambda_1^j,\lambda_2^j$为尺寸系数，未知
 
@@ -423,11 +577,32 @@ $$
 
 $\vec \lambda$解为$M^TM$最小的特征值对应的特征向量
 
+```matlab
+[Vec,Val] = eig(M'*M);
+% the first column refers to the eigenvector with samllest eigenvalue
+lambda1 = Vec(1:n,1);
+lambda_sol = lambda1;
+% retrieve the corresponding gamma value
+gamma = Vec(n+1,1);
+```
+
+==只有$\lambda$和$\gamma$ 所有元素均为正才是正确的重建。==
+
 #### 4点算法
+
+> 平面上的任何点均可用三个点表示，从第四个点开始只需要两个未知数，未知数总个数为
+> $$
+> \begin{array}{cc|ccc|c}
+> R&T&X_1&X_2&X_3&X_4\cdots X_n
+> \\\hline3&3&3&3&3&2(n-3)
+> \end{array}
+> =6+9+2(n-3)=2n+9
+> $$
+> <img src="img/pointsOnPlane.PNG" style="zoom: 80%;" />
 
 若全部点都位于同一2D平面，8点算法无解。4点算法专门解决这种情况，要求4个点位于同一平面
 
-<img src="img/4points.PNG" style="zoom:60%;" />
+<img src="img/4points.PNG" style="zoom: 33%;" />
 $$
 N^T\bold X=d\implies\frac1dN^T\bold X=1,其中N为平面法线,\bold x为在成像面上坐标\in R^3
 \\
