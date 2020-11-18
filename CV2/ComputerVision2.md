@@ -640,7 +640,7 @@ $$
 
 $\lambda x'=K\Pi_0g\bold X=(KR,KT)\bold X=K\lambda x$，∴$x=K^{-1}x'$
 
-$x_2^T\hat TRx_1=(K^{-1}x_2')^T\hat TR(K^{-1}x_1)=x_2'^T\underbrace{K^{-T}\hat TRK^{-1}}_{\bold F}x_1$
+$x_2^T\hat TRx_1=(K^{-1}x_2')^T\hat TR(K^{-1}x_1')=x_2'^T\underbrace{K^{-T}\hat TRK^{-1}}_{\bold F}x_1'$
 
 ## 六、多图重建
 
@@ -772,3 +772,68 @@ $W_lD_l$秩与$W_l$相同均为2，而$W_lD_l$第一列肯定和二、三列线�
 > $W_l=\begin{pmatrix}l_1^T\Pi_1\\l_2^T\Pi_2\\\vdots\\l_m^T\Pi_m\end{pmatrix}
 > \in\mathbb R^{m\times 4}$当$m\gt2$时，$W_l$的秩仍要小于等于2（秩约束）。但若$m=2$，则秩约束自动满足。这是由线的几何意义决定的：两条线的Preimage为两个面，总能在空间中相交于一条线，而点的Preimage为两条线，就不一定能恰好相交于空间中一点。
 
+## 七、Bundle Adjustment
+
+实际情况下，观测数据总有噪音，因此不会有完美的解析解。
+
+假设观测值的噪音一直是高斯噪音：$\tilde x=x+\mathcal N(0,\sigma^2)$，
+
+N张图的情况下，损失函数为$E(\mathop{\{R_i,T_i\}}\limits_{i=1,\cdots,m},\mathop{\{X_j\}}\limits_{j=1,\cdots,N})=\sum\limits_{i=1}^m\sum\limits_{j=1}^N\underbrace{\theta_{ij}}_{点j在图i中是否可见}|\tilde x_i^j-\pi(R_i,T_i,X_j)|^2$
+
+> $\theta_{ij}=1$代表点j在图i中可见，若不可见$\theta_{ij}=0$，这个点的误差不计入损失函数中
+
+两张图情况下，损失函数为$E(R,T,{X_j}_{j=1,\cdots,N})=\sum\limits_{j=1}^n|\tilde x_1^j-\pi(X_j)|^2+|\tilde x_2^j-\pi(R,T,X_j)|^2$，
+
+约束条件为$x_2^{jT}\hat TRx_1^j=0$。
+
+由于projection非线性，这是一个Non-linear Least Square problem
+
+1. **Gradient Descent**
+
+> 1-order optimization, 计算一次微分
+
+$$
+x_{k+1}=x_k-\epsilon\underbrace{\frac{dE}{dx}}_{微分必须\\总有定义}(x_k)
+$$
+
+2. **Least Squares**
+
+* ordinary least squares: $\min\limits_\vec x\sum\limits_i(a_i-x^Tb)=(a-\bold Bx)^T(a-\bold Bx)$
+
+* generalized least squares: $\min\limits_\vec x(a-\bold Bx)^T\Sigma^{-1}(a-\bold Bx)$，封闭解为$\hat x=(B^T\Sigma^{-1}B)^{-1}B^T\Sigma^{-1}a$
+
+* weighted least squares：当上式中$\Sigma$为对角阵时，每一行都是一个独立的优化问题，可以化为$\min\limits_\vec x\sum\limits_iw_i(a_i-x^Tb_i)^2,其中w_i=\sigma_i^2$
+* 对非线性问题无能为力：$\min\limits_\vec x \sum\limits_i\underbrace{|a_i-f(b_i,x)|^2}_{r_i(x)^2}$
+
+3. **Newton`s Method**
+
+$$
+E(x)\approx E(x_t)+\underbrace{g^T}_{Jacobian}(x-x_t)+\frac12(x-x_t)^T\underbrace{\bold H}_{Hessian}(x-x_t)
+\\\begin{array}{}x^*:\frac{dE}{dx}=g+\bold H(x-x_t)\doteq0
+\\x_{t+1}=x_t-\underbrace{\gamma}_{学习率}\cdot H^{-1}g
+\end{array}
+$$
+
+加上二次微分，用二次函数拟合。只适合convex区域，因为在concave区域导数为0的点是最大值，算出来了也没有用。
+
+<img src="img/NewtonsMethod.PNG" style="zoom:60%;" />
+
+4. **Gauss-Newton**
+
+适合非线性比较弱的方程
+
+牛顿法中，$g_j=2\sum\limits_ir_i\frac{\partial ri}{\partial x_j}=2J^Tr,H_{jk}=2\sum\limits_i\left[\frac{\partial r_i}{\partial x_j}\frac{\partial r_i}{\partial x_k}+\underbrace{r_i\frac{\partial^2r_i}{\partial x_j\partial x_k}}_{\textcolor{red}{该项不一定正定，直接扔了}}\right]\textcolor{red}{=2\sum\limits_iJ_{ij}J_{ik}}=2J^TJ$
+
+$x_{t+1}=x_t-H^{-1}g=x_t-(J^TJ)^{-1}J^Tr$
+
+> 分析：当非线性比较弱时，$r_i\frac{\partial^2r_i}{\partial x_j\partial x_k}$ 非常接近0,所以扔了的确不怎么影响
+
+5. **Levenberg-Marquardt——damped Newton Method**
+
+$x_{t+1}=x_t-(H+\textcolor{blue}{\lambda I_n})^{-1}g=x_t-(J^TJ+\textcolor{blue}{\lambda I_n})^{-1}J^Tr$
+
+当$\lambda\to0$时就是牛顿法
+
+当$\lambda\to\infty$时，是步长为$\lambda^{-1}$的梯度下降法
+
+$\Delta_2=-(J^TJ+\lambda\cdot diag(J^TJ))^{-1}J^Tr$，当$J$减小时，梯度下降的步长也减小，防止梯度下降法占主导。
