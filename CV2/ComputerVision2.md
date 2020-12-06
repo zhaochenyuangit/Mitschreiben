@@ -218,7 +218,7 @@ Twist： 旋转同时平移
 
 $SE(3)=g=\begin{pmatrix}R&T\\0&1\end{pmatrix}\in\mathbb R^{4\times 4}$， $g^{-1}=\begin{pmatrix}R^T&-R^TT\\0&1\end{pmatrix}$
 
-得$\dot gg^{-1}=\begin{pmatrix}\dot RR^T&\dot T-\dot RR^TT\\0&0\end{pmatrix}=\begin{pmatrix}\hat w&\vec v\\0&0\end{pmatrix}\equiv\hat\xi\in\mathbb R^{4\times 4}$
+得$\dot gg^{-1}=\begin{pmatrix}\dot RR^T&T-\dot RR^TT\\0&0\end{pmatrix}=\begin{pmatrix}\hat w&\vec v\\0&0\end{pmatrix}\equiv\hat\xi\in\mathbb R^{4\times 4}$
 $$
 \left\{
 \begin{array}{}
@@ -532,9 +532,9 @@ E还可以SVD分解，$E=U\Sigma V^T$,其中$\Sigma$一定是$diag\{\sigma,\sigm
 
 只要有E就能算出$\hat T $与R，但一个E对应两组
 $$
-\hat T_1,R_1=UR_z(+\frac\pi2)\Sigma U^T,UR_z^T(+\frac \pi2)V^T
+\hat T_1,R_1=UR_z(+\frac\pi2)\cdot\Sigma\cdot U^T,UR_z^T(+\frac \pi2)V^T
 \\
-\hat T_2,R_2=UR_z(-\frac\pi2)\Sigma U^T,UR_z^T(-\frac \pi2)V^T
+\hat T_2,R_2=UR_z(-\frac\pi2)\cdot\Sigma\cdot U^T,UR_z^T(-\frac \pi2)V^T
 $$
 
 > $R_z(\pm\frac\pi2)=\begin{pmatrix}0&\mp1&0\\\pm1&0&0\\0&0&1\end{pmatrix}$，是一个旋转矩阵，特点：也是个反对称阵。
@@ -545,7 +545,7 @@ $$
 
 > 由于$\chi E^s\neq0$，计算$||\chi E^s||_\min$时会得到两个$E^s$，绝对值相等，符号相反，都能使得$||\chi E^s||$最小
 >
-> 每个$E^s$对应两组$\hat T,R$，所以最后有4组不同的$\hat T,R$
+> 每个$E^s$对应，两个$\hat T$和两个$R$，$\hat T$与$R$两两组合，共4种组合（$\hat T_1,R_1;\hat T_1,R_2;\hat T_2,R_1;\hat T_2,R_2$）。所以一个$E$就对应了4个解。
 >
 > 如何区分? → 找到所有点深度均为正的那一组 （Depth≧0）
 
@@ -573,7 +573,7 @@ $$
 \lambda_1^1\\\lambda_1^2\\\vdots\\\lambda_1^n\\\gamma
 \end{pmatrix}=0
 $$
-转为优化问题：$\min_{||\lambda||=1}||M\lambda||^2=\min_{||\lambda||=1}\lambda^TM^TM\lambda$
+其中，$M\in R^{3n\times (n+1)}$，求使得$M\vec\lambda=0$的$\vec \lambda $可以转为最小值优化问题：$\min_{||\lambda||=1}||M\lambda||^2=\min_{||\lambda||=1}\lambda^TM^TM\lambda$
 
 $\vec \lambda$解为$M^TM$最小的特征值对应的特征向量
 

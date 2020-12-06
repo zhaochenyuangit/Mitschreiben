@@ -253,3 +253,104 @@ $$
 \\
 更新状态方差&P_k=P_k^--KHP_k^-=(I-KH)P_k^-\end{array}
 $$
+
+## Indirect Method
+
+提取图片上关键点，然后只用这些关键点来估计相机运动
+
+#### 2D-2D mapping：8点算法
+
+和CV2中学的一样，不过3D重建部分有出入
+
+利用trianglation，projection应等于reprojection, 即$\vec y_i=\pi(T_i\vec X_i)$，其中$\vec y=\begin{bmatrix}u_i\\v_i\end{bmatrix}$为成像位置，$\vec X$ 为空间位置。
+$$
+\begin{array}{}
+\vec y_i=\pi(T_i\vec X_i)
+\\\equiv\begin{bmatrix}u_i\\v_i\end{bmatrix}=
+\begin{bmatrix}\frac{[T_i]_1\vec X_i}{[T_i]_3\vec X_i}
+\\\frac{[T_i]_2\vec X_i}{[T_i]_3\vec X_i}\end{bmatrix}=
+\begin{bmatrix}\frac{r_{11}x+r_{12}y+r_{13}z+t_x}{r_{31}x+r_{32}y+r_{33}z+t_z}
+\\\frac{r_{21}x+r_{22}y+r_{23}z+t_y}{r_{31}x+r_{32}y+r_{33}z+t_z}
+\end{bmatrix}
+\\\equiv \left\{\begin{array}{}\left([T_i]_{第一行}-u_i\cdot[T_i]_{第三行}\right)\cdot\vec X_i\mathop{=}\limits^{!}0
+\\\left([T_i]_{第二行}-v_i\cdot[T_i]_{第三行}\right)\cdot\vec X_i\mathop{=}\limits^{!}0
+\end{array}\right.
+\\\equiv\begin{bmatrix}
+[R_i]_1-u_i\cdot[R_i]_3
+\\ [R_i]_2-v_i\cdot[R_i]_3
+\end{bmatrix}\cdot\vec X=-\begin{bmatrix}
+t_x-u_i\cdot t_z
+\\ t_y-v_i\cdot t_z
+\end{bmatrix}
+\end{array}
+$$
+
+```matlab
+# reconstruction 重建3D点的另一个方法
+function reconstruction(R,T,x1,y1,x2,y2,nPoints)
+R2=R;#frame 2
+T2=T;
+R1=diag([1 1 1]);# frame1，坐标原点
+T1=[0 0 0]';
+
+p = zeros(nPoints,3);
+for i=1:nPoints
+	A=zeros(4,4);
+	A(1,:)=[R1(1,:) T1(1)] - [R1(3,:) T1(3)]*x1(i)
+	A(2,:)=[R1(2,:) T1(2)] - [R1(3,:) T1(3)]*y1(i)
+	A(3,:)=[R2(1,:) T2(1)] - [R2(3,:) T2(3)]*x2(i)
+	A(4,:)=[R2(2,:) T2(2)] - [R2(3,:) T2(3)]*y2(i)
+B = -A(:,4);
+A = A(:,1:3);
+#solve Ap=B，算出3D坐标
+p = A\B
+```
+
+#### 2D-3D mapping：DLT
+
+>  Direct Linear Transformation，2d点和3d点之间的对应关系
+
+$$
+\begin{array}{}\vec x=K\cdot \underbrace{P}_{=(R\ t)}\cdot\vec X
+\\\equiv \underbrace{K^{-1}\vec x}_{normalized\\coordinate}=P\cdot \vec X 
+=\begin{bmatrix}A^T\\B^T\\C^T\end{bmatrix}\cdot\vec X
+\\\equiv \left\{\begin{array}{}
+\frac{x_i}{w_i}=\frac{A^T\vec X_i}{C^T\vec X_i}
+\\ \frac{y_i}{w_i}=\frac{B^T\vec X_i}{C^T\vec X_i}
+\end{array}\right.\implies\left\{
+\begin{array}{}x_iC^T\vec X_i-w_iA^T\vec X_i=0
+\\ y_iC^T\vec X_i-w_iB^T\vec X_i=0
+\end{array}\right.
+\\\equiv \underbrace{\begin{pmatrix}
+-w_i\vec X_i&0&x_i\vec X_i\\
+0&-w_i\vec X_i&y_i\vec X_i
+\end{pmatrix}}_{\begin{pmatrix}a_{x}^T\\a_y^T\end{pmatrix}}
+\cdot\begin{pmatrix}A^T\\B^T\\C^T\end{pmatrix}\mathop{=}\limits^{!}0
+
+\end{array}
+$$
+
+其中，$w_i$可以取$1$或$-1$，一般取$1$。这样，每对点可以提供两个约束，综合多对点信息，有：
+$$
+\begin{bmatrix}a_{x1}^T\\a_{y1}^T\\\vdots\\\vdots\\a_{xi}^T\\a_{yi}^T\end{bmatrix}
+p\triangleq \textbf Mp\mathop{=}\limits^{!}0
+$$
+要求的$p$是$\textbf M$最小的特征值对应的特征向量：$\textbf M=USV^T,\ p_s=V_{第12列}\to$ restack得到$P$
+
+> restack时要小心，$p_s$列向量中每四个元素是$P$中的一行，所以必须$P=reshape(ps,4,3)';$
+
+得到$P$后，需要归一化
+
+```matlab
+# det(R)=1
+R3norm = norm(R(3,1:3));
+P = 1/R3norm*P;
+T = P(:,4)
+# 正交化：R^T*R = I
+Q = P(:,1:3);
+[UQ,SQ,VQ]=svd(Q);
+R=UQ*VQ'; # 等于scale matrix SQ 替换成了diag([1 1 1])
+# 而UQ, VQ都是旋转矩阵，所以这样出来的R一定是旋转矩阵
+P(:,1:3)=R
+```
+
