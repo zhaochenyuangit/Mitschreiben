@@ -306,6 +306,10 @@ A = A(:,1:3);
 p = A\B
 ```
 
+> 这种方法适合二图重建，因为在只有两张图片的情况下，尺寸系数不重要。
+>
+> 原先在CV2中学的M矩阵方法适合多图重建，尺寸系数用于还原每张图片的尺寸信息（拍摄者位置的远近）。
+
 #### 2D-3D mapping：DLT
 
 >  Direct Linear Transformation，2d点和3d点之间的对应关系
@@ -354,3 +358,81 @@ R=UQ*VQ'; # 等于scale matrix SQ 替换成了diag([1 1 1])
 P(:,1:3)=R
 ```
 
+## 提取图片特征
+
+间接法估计相机运动有两个附带难题：
+
+1. 检测关键点
+
+   * corners: 像素值剧烈变化的点
+
+   * blobs: 独特的成片区域
+
+2. 关键点对应：在关键点上提取descriptor，一般是一些不会随视角变化而变化的点，称为invariant
+
+> 关键点仅在关键帧提取，相邻两个关键帧之间距离（baseline）足够大，同时拍摄的图像又有足够的重叠（overlap）
+
+corners定义：在图片x,y两个方向上移动$(u,v)$距离，总会产生像素值的变化$E(u,v)=\sum_W\left[I(x+u,y+v)-I(x,y)\right]^2$，其中，当u,v足够小时，$I(x+u,y+v)\approx I(x,y)+\frac{\partial I}{\partial x}u+\frac{\partial I}{\partial y}v=I(x,y)+\underbrace{\begin{pmatrix}I_x&I_y\end{pmatrix}}_{gradient}\underbrace{\begin{pmatrix}u\\v\end{pmatrix}}_{shift}$，所以$E(u,v)=\sum_W\left[{\begin{pmatrix}I_x&I_y\end{pmatrix}}\begin{pmatrix}u\\v\end{pmatrix}\right]^2=\sum_W\begin{pmatrix}u\\v\end{pmatrix}^T\begin{bmatrix}I_x^2&I_xI_y\\I_yI_x&I_y^2\end{bmatrix}\begin{pmatrix}u\\v\end{pmatrix}=\begin{pmatrix}u\\v\end{pmatrix}^T\underbrace{\sum_W\begin{bmatrix}I_x^2&I_xI_y\\I_yI_x&I_y^2\end{bmatrix}}_{\triangleq H:\ structure\ tensor}\begin{pmatrix}u\\v\end{pmatrix}$
+
+求$H$的特征值$\lambda$及特征向量$x$：
+
+* $Hx_+=\lambda_+x_+$：对应变化最大方向
+* $Hx_-=\lambda_-x_-$：对应变化最小方向
+
+Harris operator: $f=\frac{\lambda_-\cdot\lambda_+}{\lambda_-+\lambda_+}=\frac{|H|}{trace(H)}$ 转为求$H$的模及迹，更快但是损失一些精度。$f\gt$某个阈值即为要找的corner点。
+
+## RANSAC算法
+
+用于存在outliers的数据集，可以有效排除outliers，清洗数据集。
+$$
+1-p=\underbrace{(1-\overbrace{w^s}^{s个样本\\均为\\群内值\\概率}}_{捡到至少一个\\离群值概率})^N=(1-(1-\varepsilon)^s)^N
+$$
+其中，p为成功概率（找到唯一解），$\varepsilon$为离群值占整体的比例（数据集干净程度），s为采样个数（8点算法中s=8），N为迭代次数。
+
+上式变形后可得：$\large N\ge\frac{\log(1-p)}{\log(1-(1-\varepsilon)^s)}$，即经过N次RANSAC算法迭代后，可以得到一个离群值比例为$\varepsilon$，成功概率为$p$的数据集。
+
+8点法估计相机运动时，每一次RANSAC算法的步骤：
+
+1. 用特征提取，特征匹配算法得到原数据集
+2. 在原数据集中随机地挑$s$组配对
+3. 用这$s$对点，算出相机的运动，并用估计的相机运动重建所有配对的3D点
+4. 将3D点重新投影到第二张照片，和原来取点的位置比较，如果位置变化小于一个阈值认为投影成功
+5. 统计成功率，若这8对点估计的相机运动和大部分配对都契合，说明这次取的8对点中没有离群值。（少部分不契合的点大概率是离群值）。
+6. 保留成功率最高的相机运动估计，（最贴近真实值）。把不符合这个相机运动的配对排除，得到清洗后的数据集。
+
+## Direct Method 直接法
+
+不经过特征提取，直接比较两张照片的像素值，从中算出相机运动。**必须要用RGB-D相机**
+
+原理：相机的运动用twist表示，$\begin{pmatrix}v_1&v_2&v_3&w_1&w_2&w_3\end{pmatrix}$
+$$
+\begin{array}{}
+重新投影：&w(\vec y,\xi)=\pi\left(\underbrace{(T(\xi)}_{相机运动}\cdot \underbrace{Z_1(\vec y)\cdot\vec y}_{深度\times标准化像素位置\\=空间位置}\right)
+
+\\差异：&r(\vec y,\xi)=I_1(\vec y)-I_2(w(\vec y,\xi))\mathop{=}\limits^{!}0\\&即图一中某像素经运动到图二，像素值应不变
+\end{array}
+\\一样用高斯牛顿法：\large E(\xi)=\frac12\sum_{y\in\Omega}\frac{r(\vec y,\xi)^2}{\sigma_I^2}=\frac12 \vec r(\xi)^T\tilde W \vec r(\xi)
+$$
+牛顿法：$\nabla_x \tilde E(x)=\vec r(x_k)^T\tilde WJ_k+(x-x_k)^TJ_k^T\tilde WJ_k\triangleq b_k^T+(x-x_k)^T \tilde H_k\mathop{=}\limits^{!}0$
+
+其中，$\vec r_k\in\mathbb R^{n}$为redisual两张照片对应点像素值差，只和当前估计的相机运动$\xi_k$有关
+
+$J_k\in\mathbb R^{n\times 6}$为Jacobian，即$\vec r_k$随$\xi_k$中每个元素变化而变化的量。
+
+>  数值法算$J_k$：对每个运动分量，加一个微小的变化$\epsilon$，新运动$\xi_k^\star=\log(T(\Delta\xi)\cdot T(\xi_k))$，再算一遍$\vec r^\star$，$\frac{\vec r_k^\star-\vec r_k}{\epsilon}$即对应$J_k$中该运动分量的列。
+
+每次迭代更新量：$\implies x-x_k=-H_k^{-1}b_k$，
+
+
+
+corse to fine算法：由于initialization一般为0, 为了减少计算量、收敛更快，从渣画质开始估算，一步步到高画质。
+
+huber norm: 两张照片实际上对应点的像素值不可能一样，而且还有离群值影响。离群值的特点是不论怎么改变相机运动，像素差异仍然巨大。huber norm可以减少离群值的影响：
+$$
+||r||_\delta=\left\{\begin{array}{}
+0.5r^2&|r|\le\delta
+\\\delta(|r|-0.5\delta)&|r|\gt\delta
+\end{array}
+\right.
+$$
+此处的$r$不是向量值，而是$\vec r$中的每个元素。对每个元素（每对对应像素），差异小时按平方算差异，太大时按线性算差异，这样离群值造成的巨大差异就不会在整体中太过突出。

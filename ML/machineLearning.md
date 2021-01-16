@@ -354,7 +354,7 @@ Variance：预测值变化剧烈程度，过拟合时Variance高
 
 当且仅当模型临界拟合数据集时，Bias与Variance均低。
 
-<img src="img/lin.reg.bias&amp;var.PNG" alt="lin.reg.bias&amp;var" style="zoom:50%;" />
+<img src="img/lin.reg.bias&var.PNG" alt="lin.reg.bias&amp;var" style="zoom:50%;" />
 
 #### 四、正态分布序列与线性回归的关联
 

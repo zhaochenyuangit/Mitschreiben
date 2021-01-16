@@ -264,11 +264,258 @@ $MR=MC$ 是收入最大点，$MC=AC$是成本最少点。在极限情况下，�
 
 ## 第四章 完美竞争
 
+#### 市场稳态点 Market Equilibrium
+
+这一章使用的模型的几个假设
+
+1. 所有人均为price taker，即按市场给定价格买进卖出
+2. 只有一种商品，而且每个生产商的货物质量全部一样
+3. 市场透明，只有一个价格
+4. 生产商的边际成本是递增的
+5. 生产商的数量为自然数$\in N$ （非负整数）
+
+令货物需求量为$Q^D$，货物生产量为$Q^S$。在市场稳态点，生产量与消费量相同$Q^D=Q^S$，并且消费者的预期价格和生产商的最后一件货物的边际成本相同$p(Q^\star)=MC(Q^\star)$
+
+> 根据经济学的经验规律，价格越高时，生产越多，消费越少。价格越低时反之。
+
+<img src="img/marketEP.PNG" style="zoom:60%;" />
+
+> （例）练习4题1：设货物需求量为$Q^D(p)=a - p$，厂家生产商品的成本为$C(q)=\left\{\begin{array}{}c^f+q^2,&q\gt0\\0,&q=0\end{array}\right.$，求市场中生产商的数量，以及他们的利润。
+>
+> 厂家边际成本为$MC(q)=2q$，平均总成本为$AC(q)=\frac{c^f}{q}+q$
+>
+> 货物需求数量已经给出，只要求货物供应数量。这和上一章差不多，对生产商来说永远有两个问题：
+>
+> 1. 要不要开始生产? 临界条件：$MC=AC\implies 2q=\frac{c^f}{q}+q\implies q=\sqrt {c^f}$ ，结合问题2的$p=2q$得临界价格为$p=2q = 2\sqrt{c^f}$
+> 2. 生产的话生产多少? 临界条件：$MC=p\implies 2q = p\implies q = \frac p2$
+>
+> 因此市场上$n$家同质的公司的总供应量为：$Q^S(p)=\left\{\begin{array}{}n\cdot\frac p2&p\ge 2\sqrt{c^f}\\0,&p\lt2\sqrt{c^f}\end{array}\right.$
+>
+> 市场临界的稳态点为
+> $$
+> \begin{array}{}&Q^D=Q^s
+> \\&\equiv a-p = \frac{n\cdot p}2
+> \\代入厂家开始生产的临界价格&\equiv a-2\sqrt{c^f}=n\frac{2\sqrt{c^f}}{2}
+> \\&\implies n = \frac{a}{\sqrt{c^f}}-2
+> \\厂家数量必须为非负整数：&n^\star=\max\{\lfloor\frac{a}{\sqrt{c^f}}-2\rfloor,0\}
+> \end{array}
+> $$
+> 代入具体数字：（ⅰ）当$a=120,c^f=100时，n^\star=\frac{120}{10}-2=10$, 已经是一个自然数，说明此时的市场已经在临界稳态点，所有的厂家利润均为0,即$\pi^\star=0$
+>
+> （ⅱ）$a=126,c^f=100时，n=\frac{126}{10}-2=10.6\approx10$ 只有当理论厂家数量不是整数时，厂家才有盈利空间。
+>
+> **注意**此时货物的价格不再是厂家开始生产的临界价格了，而要代入到市场中去算：$Q=a-p=n\cdot\frac p2\implies 货物价格p=a/(\frac{n}2-1)=126/(\frac{10}2-1)=126/6=21$, 而货物交易数量为$\frac p2=10.5$。 
+>
+> 全部厂商的盈利总额为$\pi^\star=pq-(c^f+q^2)=21\times10.5-(100+10.5^2)=10.25$
+
+#### 计算市场的Welfare
+
+在达到最大交易量之前，认为每交易一件商品，消费者和生产者都是赚的，市场上总Welfare增加：消费者因为商品价格低于预期觉得赚，生产者多卖了产品也是赚。两者的Surplus相加就是市场的总Surplu，表现在图形上是两个三角的面积。
+
+> Welfare只关心效率（怎么把饼做大），而不关心公平（怎么分配）
+
+<img src="img/welfare.PNG" alt="welfare" style="zoom:67%;" />
+
+#### 引入价格限制
+
+最高限价：$p'\lt p^\star$，产量偏少，价格偏低（消费者愿意付更多钱获更多产量）
+
+最低限价：$p''\gt p^\star$，产量偏少，价格偏高???
+
+#### 引入税收
+
+在消费侧或者供给侧，每件商品收$t$的税，总税收为$T=t*Q$
+
+收税使得消费者预期支付价格降低，或使生产者的成本上升。$t = p(Q_t^\star)-MC(Q_t^\star)$
+
+<img src="img/effectoftax.PNG" alt="tax" style="zoom:60%;" />
+
+> 不论税加在谁头上，效果是一样的。若加在消费一侧，购买欲望降低，生产商就会减少生产;加在生产一侧，直接导致商品涨价，消费者就会少买。
+>
+> 消费、生产两方支付的税金和自身曲线的斜率有关，斜率越大的付的税越多。
+>
+> 税收使得市场上的总交易量降低，且降低的效益比收上来的税多（有损失WL）
+
+
+
 ## 第五章 市场失灵
+
+market failure: 所有使得市场上welfare减少的特殊情况
+
+#### 一、 垄断 monopoly
+
+假设：垄断知道市场需要量和价格曲线，可以随意设定价格，但是卖给所有人都是同一个价格
+
+垄断者的目标也是最大化利润，与之前不同的是其盈利完全由市场需求曲线决定：
+$$
+\max_Q\pi(Q)=\underbrace{R(Q)}_{=p(Q)* Q}-C(Q)
+$$
+其中，$p(Q)$ 为 inversed market demand， 是一个关于Q的函数
+
+**市场稳态点：** 1. MR(Q) = MC(Q)， 在此临界点上赚最多
+
+2. 生产量=消费需求量，且$p(Q)\neq MR(Q)$
+3. 垄断者可接受的最高固定成本为盈利全用来付固定成本，即$p(Q)*Q-C(Q)=0$
+
+> 对垄断者来说, MR(Q) 一定不等于p(Q)， 且一定小于p(Q)
+>
+> 设$p(Q)=a-Q$，则$R(Q)=p(Q)*Q=aQ-Q^2$, ∴$MR(Q)=\frac{dR(Q)}{dQ}=a-2Q\lt a-Q$，$Q\gt0$
+
+<img src="img/monopoly.PNG" alt="monopoly" style="zoom:60%;" />
+
+> 当垄断者知道自己可以操纵价格的时候，他一定会通过少卖制造稀缺性、抬高价格。如此一来，虽然销售额少了，但是单价提高，总利润提高。
+>
+> 反映到图上，producer surplus 的形状变为梯形，其面积大于原来的三角（上一章）。而消费者的consumer surplus 面积缩小，消费者吃亏。
+>
+> 实际起作用的还是p(Q) 和 MC(Q)两条线，MR(Q)只是辅助线，帮助垄断确定对其最有利的销售额和售价。
+
+限高价的影响：
+
+1. 限价之后，垄断者就像普通price taker一样，只能按指定价格出售，此时销售额由$MR(Q)=p\gt MC(Q)$确定。因为降低价格后，垄断者每件商品赚的本来就比原来预期的少了，再在此时的销售额上多生产一件商品他都是亏的，$MR(Q)\lt MC(Q)$，所以不会生产。
+2. 将价格限定在原来正常市场价就可以消除垄断者带来的welfare损失
+
+<img src="img/monopolupriceceiling.PNG" style="zoom:60%;" />
+
+3. 限高价也可能导致$p\lt AC(Q)$，企业纯亏，不愿生产
+   * 极限情况：限价$p=AC(Q)$
+   * 限价于$p=MC(Q)$，企业刚好能赚回浮动成本但，赚不回固定成本。固定成本由政府补贴（subsidice）
+   * 国有企业，无所谓损失
+
+垄断为什么存在呢? 有以下几点原因：
+
+1. 自然垄断：当固定成本太高，以至于多家公司的营运成本大于一家垄断公司的成本。$C(Q)\lt\sum_{i}^nC(q_i)$
+2. 专利垄断：当研发成本高昂，为了保护创新者积极性，也是保护未来市场。
+
+#### 二、外部效应 externality
+
+第四章中不考虑消费与生产行为对其它人的影响。外部效应可以是正面或负面的。
+$$
+负效应(cost)：MC(Q)=MC_{private}(Q)+MC_{external}(Q)\\
+正效应(benefit)：MB(Q)=MB_{private}(Q)+MB_{external}(Q)
+$$
+
+> 关键是自己考虑自己对别人带来的坏影响，从而自我规制。而不是考虑别人对自己的坏影响。
+
+> （例）E5P5-8：有两家企业，每家企业的成本为$C(q_i)=15+\frac1{100}q_i^2+\frac15q_j$，即一家企业的生产会给另一家带来负面影响。
+>
+> 则每家企业在决定生产量时，要考虑到自己对别人的负面影响而少生产：
+> $$
+> \frac{\partial\pi}{\partial q_i}=p-(\frac2{100}q_i+\frac15)
+> $$
+
+<img src="img/externality.PNG" alt="externality" style="zoom:60%;" />
+
+
+
+#### 三、共享商品 public goods
+
+共享商品有两个特点：
+
+1. non-rivaly: 不随人们的消费而消耗
+2. non-excludability: 所有人都可获得并消费
+
+> 比如：电台，烟花
+
+<img src="img/publicgoods.PNG" alt="publicgoods" style="zoom:60%;" />
+
+free-rider problem: 这样的商品只要一人付出所有人都得利，结果就是没有人愿意付出，或者原本所有人齐心协力能做得更好，但只有一人付出（效率低）。可以由政府牵头来办。
 
 ## 第六章 宏观经济指标
 
+这一章是宏观经济的导言。
+
+#### 一、GDP国内生产总值
+
+有三种测算方法：
+
+1. 产出法（output）：国内产出货物的市场价值，不论这些货物是由谁生产或者借用了谁的生产资料。$Y=F(L,K)$。
+2. 收入法（income）：$Y=wL+rK$ 即劳动者报酬+生产资料折价。
+3. 支出法（Expenditures）：$Y=\underbrace{C}_{个人消费}+\underbrace{G}_{政府消费}+\underbrace{I}_{投资}+\underbrace{EX}_{出口}-\underbrace{IM}_{进口}$。即常说的三驾马车：消费、投资和出口。
+
+以上三种方法所测算出的GDP在理论上是相同的。
+
+#### 二、物价指数
+
+名义GDP：当年产量×当年价格
+
+实际GDP：当年产量×往年价格
+
+GDP-deflator （Paasche指数）：$\large P_t^P=\frac{\mathop{\sum}\limits_{i=1}^N(p_{i,t}\times Q_{i,t})}{\mathop{\sum}\limits_{i=1}^N(p_{i,0}\times Q_{i,t})}$， 当年物价和基年物价之比，以当年产量为权重。
+
+消费者物价指数 CPI （Laspeyres指数）：$\large P_t^L=\frac{\mathop{\sum}\limits_{i=1}^N(p_{i,t}\times Q_{i,0})}{\mathop{\sum}\limits_{i=1}^N(p_{i,0}\times Q_{i,0})}$, 同样是当年物价和基年物价之比，不过以**基年**产量为权重。
+
+> 基年指一个比较周期里的第一年，比如2017,2018,2019, 则所有计算时基年都是2017年
+
+通胀指数：$\large \frac{P_t-P_{t-1}}{P_{t-1}}$
+
+> 为什么存在通胀? 有这么一个理论：$\underbrace{M}_{通货量}\cdot \underbrace{V}_{货币易手速度}=\underbrace{P}_{价格}\cdot \underbrace{Y}_{货物产出}$
+>
+> 则$P=\large\frac{M\cdot V\to 而V一般为定值}{Y}$ 那么货币数量应一直与货物产出保持同步才能稳定物价。
+>
+> 当通胀率过高时，贷款方损失而借款方得利。
+
+#### 三、劳动力
+
+$$
+\underbrace{N}_{适龄人口}\supset \underbrace{L}_{劳动力}=\underbrace{E}_{受雇佣人口}+\underbrace{U}_{非自愿无业人口}
+$$
+
+失业率：$u = \frac UL=\frac{U}{E+U}$
+
+劳动参与率：$e = \frac LN=\frac{E+U}{N}$
+
 ## 第七章 经济增长
+
+这一章讨论一个封闭的经济体怎么稳定增长。
+
+有几点假设：
+
+1. 输出$Y=F(L,K)$，且是constant return to scale, 即$F(\lambda L,\lambda K)=\lambda F(L,K), \forall \lambda$
+
+> 比如：$Y=L^{\frac12}K^{\frac12}$，或$Y=L^{\frac13}K^{\frac23}$
+
+2. 而生产的所有商品都用来消费或者投资（储蓄）： $Y=\underbrace{C}_{消费}+\underbrace{sY}_{投资I=储蓄}$
+
+3. 输出 Y 随输入 L，K 渐缓增长，即投入越多增长越多，但增长的速度越来越慢。
+
+以上式子可以写成简约形式，令$F(L,K)=Y$两端同除$L$，则有$\frac YL= \frac 1LF(L,K)= F(1,\frac KL)$
+
+令$\frac KL\triangleq k, \frac YL\triangleq y$，分别代表人均资本和人均收入，简约形式即为$f(k)=y$
+
+> $y=k^{\frac 12}$, 或$y=k^{\frac 23}$
+
+现假设人口增长率为n，则人口$L_{t+1}=(1+n)L_t$
+
+资产增值公式为$K_{t+1}=K_t+\underbrace{sY_t}_{投资}-\underbrace{\delta K_t}_{资产折旧}$，同样两边除以人口数得到简约形式
+$$
+K_{t+1}=K_t+sY_t-\delta K_t
+\\\frac{\textcolor{blue}{L_{t+1}}}{\textcolor{red}{L_{t+1}}}\cdot \frac{\textcolor{red}{K_{t+1}}}{\textcolor{blue}{L_t}}=\frac{K_t}{L_t}+\frac{sY_t}{K_t}-\frac{\delta K_t}{L_t}
+\\\textcolor{red}{k_{t+1}}\cdot\textcolor{blue}{(1+n)}=k_t+sy_t-\delta k_t
+$$
+
+#### 经济稳定状态
+
+哪怕人口增长和资产折旧，经济总量都不变。$k_{t+1}=k_t=k^\star$
+
+∴有$k^\star(1+n)=k^\star+sy_t-\delta k^\star\implies sy_t=\underbrace{sf(k^\star)}_{人均投资}=\underbrace{(n+\delta)k^\star}_{必要的投资量}$
+
+所以$(n+\delta)k^\star$就是维持当前经济规模所需的必要投资量
+
+<img src="img/economygrowth.PNG" alt="economygrowth" style="zoom: 80%;" />
+
+$k^\star=\frac{sf(k^\star)}{n+\delta}$，当储蓄率s↑，$k^\star$↑ ; 当n或$\delta$ ↑，$k^\star$↓。
+
+> $k^\star$称为稳态点，即不论原先k规模如何，总是会收敛到$k^\star$
+
+#### 黄金准则
+
+使人均消费量最大的储蓄率
+
+人均消费量为$c_t=(1-s)y_t = f(k_t)-sf(k_t)$
+
+则$c^\star=f(k^\star)-(\delta+n)k^\star$ 
+
+要使得$c^\star$最大，即$c^{\star'}\mathop{=}\limits^{！}0\therefore f'(k^\star)=n+\delta$
 
 ## 第八章 经济波动
 
