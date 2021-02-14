@@ -419,6 +419,8 @@ $$
 
 $J_k\in\mathbb R^{n\times 6}$为Jacobian，即$\vec r_k$随$\xi_k$中每个元素变化而变化的量。
 
+
+
 >  数值法算$J_k$：对每个运动分量，加一个微小的变化$\epsilon$，新运动$\xi_k^\star=\log(T(\Delta\xi)\cdot T(\xi_k))$，再算一遍$\vec r^\star$，$\frac{\vec r_k^\star-\vec r_k}{\epsilon}$即对应$J_k$中该运动分量的列。
 
 每次迭代更新量：$\implies x-x_k=-H_k^{-1}b_k$，
@@ -436,3 +438,124 @@ $$
 \right.
 $$
 此处的$r$不是向量值，而是$\vec r$中的每个元素。对每个元素（每对对应像素），差异小时按平方算差异，太大时按线性算差异，这样离群值造成的巨大差异就不会在整体中太过突出。
+
+## EKF-SLAM
+
+与普通EKF类似，但是地标的实际位置也不知道，需要靠优化收敛。
+
+二维情况下，机器人的状态为$\begin{pmatrix}x\\y\\\theta\end{pmatrix}$，每个地标的状态为$\begin{pmatrix}l_x\\l_y\end{pmatrix}$ ，
+
+整个状态向量变成$\begin{pmatrix}x&y&\theta&\cdots&l_{x,i}&l_{y,i}&\cdots\end{pmatrix}^T\in \mathbb R^{3+2n}$
+
+机器人视角下到地标的测量值为$\begin{pmatrix}||(x_t,y_t)-(l_{j,x},l_{j,y})||_2\\\arctan(\frac{l_{j,y}-y_t}{l_{j,x}-x_t})-\theta_t\end{pmatrix}=\begin{pmatrix}range_i\\bearing_i\end{pmatrix}$
+
+#### 一、初始化
+
+①机器人初始状态均为0,方差为0
+
+②地标方差为$\infty$（没有信息）
+
+③机器人状态与地标之间的协方差为0
+
+第一次见到某个地标时，将其位置初始化为机器人位置+观测
+$$
+l_x = x+r*\sin(\theta+b)
+\\l_y = y+r*\cos(\theta+b)
+$$
+
+#### 二、预测
+
+机器人状态（前三个状态量）依然按普通EKF更新：
+$$
+\begin{pmatrix}x\\y\\\theta\end{pmatrix}'
+= \begin{pmatrix}x\\y\\\theta\end{pmatrix}+
+\begin{bmatrix}
+u_{tr}\cdot \cos(\theta_{t-1}+u_{r_1})\\
+u_{tr}\cdot\sin(\theta_{t-1}+u_{r_1})\\
+u_{r_1}+u_{r_2}
+\end{bmatrix}+\mathcal N(0,\mathbf\Sigma_{dt})
+$$
+地标的位置则应不变：$m_t = m_{t-1}$
+
+误差传递：机器人状态误差仍和原来一样，地标没有误差传递
+$$
+G_x = \begin{pmatrix}1\\&1\\&&1\end{pmatrix}+\begin{bmatrix}0&0&u_{tr}\cdot-\sin(\theta_{t-1}+u_{r_1})
+\\0&0&u_{tr}\cdot\cos(\theta_{t-1}+u_{r_1}\\
+0&0&0
+\end{bmatrix}
+$$
+
+$$
+G_{总}=\begin{bmatrix}G_x\\&I\end{bmatrix}
+$$
+
+误差传递只更新和机器人状态（姿态）有关的项：
+$$
+\Sigma_t^-=\begin{pmatrix}G_x\\&I\end{pmatrix}
+\begin{pmatrix}\Sigma^+_{t-1,\ xx}&\Sigma_{t-1,\ xm}^+\\
+\Sigma_{t-1,\ mx}^+&\underbrace{\textcolor{red}{\Sigma_{t-1,\ mm}^+}}_{这一项不变}\end{pmatrix}\begin{pmatrix}G_x\\&I\end{pmatrix}^T
++\begin{pmatrix}\Sigma_{dt,x}&0\\0&0\end{pmatrix}
+$$
+
+#### 三、更新
+
+每个观测到的地标贡献一个$\mathbb R^{2\times(3+2n)}$的测量矩阵，其中，关于机器人状态的前三个量总是有值，而之后关于地标的测量就只有自己这个地标有信息（不是0）,其余地标均为0
+$$
+H_i = \begin{bmatrix}\frac{\partial range_i}{\partial x}&
+\frac{\partial range_i}{\partial y}&
+\frac{\partial range_i}{\partial \theta}&
+\cdots&0&\cdots&
+\frac{\partial range_i}{\partial l_{x,1}}&
+\frac{\partial range_i}{\partial l_{y,i}}&\cdots
+\\\frac{\partial bearing_i}{\partial x}&
+\frac{\partial bearing_i}{\partial y}&
+\frac{\partial bearing_i}{\partial \theta}&
+\cdots&0&\cdots&
+\frac{\partial bearing_i}{\partial l_{x,1}}&
+\frac{\partial bearing_i}{\partial l_{y,i}}&\cdots
+\end{bmatrix}
+$$
+若在某一步观测到了m个地标则总H矩阵为$\mathbb R^{2m\times(3+2n)}$
+
+```matlab
+Hi(1:2,1:3) = [ -zX/range, -zY/range, 0; ...
+            zY/(range.^2), -zX/(range.^2), -1 ];
+Hi(1,2*landmarkId+2:2*landmarkId+3) = [ zX/range, zY/range ];
+Hi(2,2*landmarkId+2:2*landmarkId+3) = [ -zY/(range.^2), zX/(range.^2) ];
+```
+
+之后和普通EKF一样更新
+
+```matlab
+Q = 0.1*eye(2*m);
+K = sigma * H' * inv( H * sigma * H' + Q );
+mu = mu + K * (Z-Z_expected);
+sigma = (eye(size(mu,1)) - K * H) * sigma;
+```
+
+> 虽然一开始地标之间协方差均为0,但是一旦观测到地标后，由于机器人位置和地标位置绑定，而地标的应测值和机器人位置绑定，所以所有的地标位置是互相关联的，$\Sigma$会成为一个稠密的矩阵
+
+## PGO - Pose Graph Optimization
+
+属于姿态后处理，在使用了直接法估计了相机的运动后，由于直接法只估计相邻两帧之间的相对运动，整体的姿态误差会越来越大，最后导致闭环失败。
+
+PSO有两个作用：
+
+1. 将闭环的首尾两个点相接，告诉模型这应是同一个点
+2. 调整首尾之间的所有估计的运动值，使它们既和原来相差不大，又能使闭环成功
+
+步骤：
+
+1. 将所有姿态初始化为一开始的估计值，$x=\begin{pmatrix}\xi_0&\cdots&\xi_i&\cdots&\xi_n\end{pmatrix}^T \in\mathbb R^{6n}$
+
+   > 这一步非常重要，因为PGO优化对初始化敏感，如果不给任何信息就优化是没有好结果的
+
+2. residual 为$r^{ij}=(\xi_i\ominus\xi_j)\ominus\underbrace{\tilde\xi^j_i}_{原先别的算法的估计值}$，即PGO估算值和原来的估算值不能差太远
+
+   其中，$\xi_1\ominus\xi_2=\log(T(\xi_2)^{-1}\cdot T(\xi_1))$
+
+   > 原点的姿态优化比较特殊，原点应一直保留在原点不动，否则会给这个优化问题额外加6个自由度，得不到想要的结果，∴ $r_0 = \xi_0$ 即初始姿态应保持$\begin{pmatrix}I&O\\0&1\end{pmatrix}$,对应的$\xi_0=\begin{pmatrix}0&0&0&0&0&0\end{pmatrix}^T$。只要偏一点都是不对的。
+
+3. 之后一样用高斯牛顿法：jacobian等于adjoint??
+
+   

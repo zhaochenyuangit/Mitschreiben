@@ -44,7 +44,7 @@
 
 **怎么判断交易是否合理?** 看交易价格是否落在两人机会成本之间（造不如买）。
 
-
+> 在第一章的（虚拟）情境中，我们假设世界上只有题目中给定的生产者和消费者，所以这个世界上的生产能力和消费能力都是有限的。当机会成本低的一方耗尽所有时间，但任务仍没有完成，那么机会成本高的一方了不得不去做。
 
 ## 第二章 消费与要求（消费者角度）
 
@@ -112,7 +112,19 @@ $$
 1. 落在预算线上$\therefore y=p_1q_1+p_2q_2$
 2. 斜率相同$\therefore \frac{\partial U/\partial q_1}{\partial U/\partial q_2}\triangleq MRS_{1,2}=\frac{p_1}{p_2}$ expense rate=utility rate (marginal rate of substitution)
 
-#### 货物的特征Charactise
+> 题目变种：一个人有总时间Z，其中工作时间L，闲暇时间F，$Z= L+F$。工作的话每小时时薪w，赚到的钱全用来买一种商品，价格为p。则其能够消费的商品量为$q=\frac{wL}{p}$。Utility function为$U(q,F)=q^{\frac12}+F^{\frac12}$.
+>
+> 解答：这种题目中，闲暇时间其实就是另一种商品，每获取一小时闲暇时间其代价为少工作一小时所没赚到的钱，故闲暇时间的价格为时薪w。总预算$y=wZ$。之后和两种商品的情况做法一样。
+>
+> $Z=L+F=\frac{pq}{w}+F\implies wZ=pq+wF$ ①
+>
+> $\frac{\partial U/\partial q}{\partial U/\partial F}=\frac{\frac12q^{-\frac12}}{\frac12 F^{-\frac12}}=(\frac Fq)^{\frac12}\mathop{=}\limits^!\frac pw \implies q=(\frac wp)^2F$  代入①式得：
+>
+> $wZ=p(\frac wp)^2F+wF=wF(\frac wp +1) \equiv Z=F(\frac wp +1)\equiv F=\frac{Z}{\frac wp +1}$ ==$=\frac{pZ}{w+p}$==
+>
+> 同理，$q=\frac{w^2Z}{pw+p^2}$
+
+####                                                                    货物的特征Charactise
 
 1. Normal/Inferior
 
@@ -164,7 +176,10 @@ Complement配对商品：货物1涨价使货物2消费量也下降，$\frac{dq_j
 >
 > 得$y=p_1q_1+p_2\cdot\frac{p_1}{p_2}q_1=2p_1q_1\implies q_1=\frac{y}{2p_1}$，同理$q_2=\frac{y}{2p_2}$，代入具体数值可以求$C$和$C'$点
 >
-> $\tilde C$点是一个辅助点，效益和$C$点一样。$U'(\tilde q_1,\frac{p_1}{p_2}\tilde q_1)=原来U$，即算出现在$\tilde q_1$,同理算出$\tilde q_2$
+> $\tilde C$点是一个辅助点，效益和$C$点一样。在$\tilde C $点上有两个条件：
+>
+> 1. 效益与原来相同$U'(\tilde q_1,\frac{p_1}{p_2}\tilde q_1)=原来U$，
+> 2. 两种货物的配比optimal bundle要符合现在的价格之比，$\frac{q_2}{q_1}=\frac{p_1}{p_2}$
 
 ## 第三章 生产与供应（生产者角度）
 
@@ -179,7 +194,7 @@ Complement配对商品：货物1涨价使货物2消费量也下降，$\frac{dq_j
 $q=F(L,K)$，确立投入与产出的关系，即给定数额的劳动力与生产资料，该工厂可以生产多少产品。可以类比为上一章的等优曲线。等产量曲线的两个假设：
 
 1. monotonicity: 当$K,L$ **均**增加时，$q$也增加
-2. convexity
+2. convexity, 即向下凹。 如何判断convex? 看两次导是否 < 0
 
 >  等产量曲线和等优曲线不同，没有complete与transitive的假设。因为在等产量曲线上，$q$是产品数量，是一个具体的数字，可以直接量化比较。而非一个捉摸不定的心理衡量值。
 
@@ -286,7 +301,7 @@ $MR=MC$ 是收入最大点，$MC=AC$是成本最少点。在极限情况下，�
 >
 > 货物需求数量已经给出，只要求货物供应数量。这和上一章差不多，对生产商来说永远有两个问题：
 >
-> 1. 要不要开始生产? 临界条件：$MC=AC\implies 2q=\frac{c^f}{q}+q\implies q=\sqrt {c^f}$ ，结合问题2的$p=2q$得临界价格为$p=2q = 2\sqrt{c^f}$
+> 1. 要不要开始生产? 临界条件：$MC=AC\implies 2q=\frac{c^f}{q}+q\implies q=\sqrt {c^f}$ ，结合下面 问题2的$p=2q$得临界价格为$p=2q = 2\sqrt{c^f}$
 > 2. 生产的话生产多少? 临界条件：$MC=p\implies 2q = p\implies q = \frac p2$
 >
 > 因此市场上$n$家同质的公司的总供应量为：$Q^S(p)=\left\{\begin{array}{}n\cdot\frac p2&p\ge 2\sqrt{c^f}\\0,&p\lt2\sqrt{c^f}\end{array}\right.$
@@ -336,13 +351,33 @@ $MR=MC$ 是收入最大点，$MC=AC$是成本最少点。在极限情况下，�
 >
 > 税收使得市场上的总交易量降低，且降低的效益比收上来的税多（有损失WL）
 
+引入税收对市场稳态点的影响：
 
+* 厂家是否开始生产的临界条件上升，因为$p=MC(q)+t$
+* 但是一旦开始生产，其产量不变，因为$MC(q)+t=AC(q)+t$，两边的t互相抵消
+
+> 例（练习4题1）：有若干家工厂，成本公式均为$C(q)=\left\{\begin{array}{}c^f+q^2,&q\gt0\\0,&q=0\end{array}\right.$ ，市场上需求与售价的关系为$Q^D(p)=a-p$
+>
+> 在引入税收后，最优产量公式变为$MR=MC\equiv p=MC(q)+t\equiv p=2q+t\implies q=\frac{p-t}{2}$
+>
+> 是否生产的临界条件变为$MC=AC\equiv 2q=\frac{c^f}{q}+q\implies q = \sqrt{c^f}$, 而$p=2q+t=2\sqrt{c^f}+t$，即开始生产的临界条件上升了 t
+>
+> $Q^s(p)=\left\{\begin{array}{}n\cdot\frac{p-t}{2},&p\ge2\sqrt{c^f}+t\\0,&其余\end{array}\right.$
+>
+> 稳定市场的临界条件受此影响变为$a-p=n\cdot\frac{p-t}{2}\equiv a-2\sqrt{c^f}-t=\frac{n\cdot2\sqrt{c^f}}{2}\equiv n=\frac{a-t}{\sqrt{c^f}}-2$
+>
+> $n^\star=\max\{\lfloor\frac{a-t}{\sqrt{c^f}}-2\rfloor,0\}$
 
 ## 第五章 市场失灵
 
 market failure: 所有使得市场上welfare减少的特殊情况
 
 #### 一、 垄断 monopoly
+
+垄断为什么存在呢? 有以下几点原因：
+
+1. 自然垄断：当固定成本太高，以至于多家公司的营运成本大于一家垄断公司的成本。$C(Q)\lt\sum_{i}^nC(q_i)$
+2. 专利垄断：当研发成本高昂，为了保护创新者积极性，也是保护未来市场。
 
 假设：垄断知道市场需要量和价格曲线，可以随意设定价格，但是卖给所有人都是同一个价格
 
@@ -369,7 +404,7 @@ $$
 >
 > 实际起作用的还是p(Q) 和 MC(Q)两条线，MR(Q)只是辅助线，帮助垄断确定对其最有利的销售额和售价。
 
-限高价的影响：
+**限高价的影响：**
 
 1. 限价之后，垄断者就像普通price taker一样，只能按指定价格出售，此时销售额由$MR(Q)=p\gt MC(Q)$确定。因为降低价格后，垄断者每件商品赚的本来就比原来预期的少了，再在此时的销售额上多生产一件商品他都是亏的，$MR(Q)\lt MC(Q)$，所以不会生产。
 2. 将价格限定在原来正常市场价就可以消除垄断者带来的welfare损失
@@ -381,10 +416,14 @@ $$
    * 限价于$p=MC(Q)$，企业刚好能赚回浮动成本但，赚不回固定成本。固定成本由政府补贴（subsidice）
    * 国有企业，无所谓损失
 
-垄断为什么存在呢? 有以下几点原因：
+**税收的影响：**
 
-1. 自然垄断：当固定成本太高，以至于多家公司的营运成本大于一家垄断公司的成本。$C(Q)\lt\sum_{i}^nC(q_i)$
-2. 专利垄断：当研发成本高昂，为了保护创新者积极性，也是保护未来市场。
+> 例（练习5题1）：垄断者知道销量与售价的关系为：$Q^D(p)=10000-1000p$， 则$p(Q)=10-\frac{Q}{1000}$，垄断者的毛利为一个确定值，为$(10-\frac{Q}{1000})\cdot Q$。此外，垄断者的所有成本为$C(Q)=c^f+2Q$，则其盈利为$\pi(Q)=(10-\frac{Q}{1000})Q-c^f-2Q$，令其导数为0即求出最高利润下的售价和销量。
+>
+> $\frac{d\pi(Q)}{dQ}=8-\frac{1}{500}Q\mathop{=}\limits^!0\implies Q=4000,p=6$
+>
+> 1. 现在每售出一瓶酒加税 $t$ 元，则对垄断者来说，其成本提高了，$C(Q)'=c^f+2Q+tQ$。还令$\pi(Q)=(10-\frac{Q}{1000})Q-(c^f+2Q+tQ)\mathop{=}\limits^!0$, 在这种情况下，最优的售价和销量都会改变。
+> 2. 若是加0.25的盈利税（提成25%），则$\pi(Q)=(1-0.25)\left((10-\frac{Q}{1000})Q-c^f-2Q\right)\mathop{=}\limits^!0$。 这种情况下是乘法系数，不影响销量和售价，但会降低垄断者的利润。
 
 #### 二、外部效应 externality
 
@@ -446,9 +485,9 @@ GDP-deflator （Paasche指数）：$\large P_t^P=\frac{\mathop{\sum}\limits_{i=1
 
 > 基年指一个比较周期里的第一年，比如2017,2018,2019, 则所有计算时基年都是2017年
 
-通胀指数：$\large \frac{P_t-P_{t-1}}{P_{t-1}}$
+==Inflation rate== (通胀指数)：$\large \frac{P_t-P_{t-1}}{P_{t-1}}$, 其中的$P_t$ 可以是GDP-deflator 或者CPI
 
-> 为什么存在通胀? 有这么一个理论：$\underbrace{M}_{通货量}\cdot \underbrace{V}_{货币易手速度}=\underbrace{P}_{价格}\cdot \underbrace{Y}_{货物产出}$
+>  为什么存在通胀? 有这么一个理论：$\underbrace{M}_{通货量}\cdot \underbrace{V}_{货币易手速度}=\underbrace{P}_{价格}\cdot \underbrace{Y}_{货物产出}$
 >
 > 则$P=\large\frac{M\cdot V\to 而V一般为定值}{Y}$ 那么货币数量应一直与货物产出保持同步才能稳定物价。
 >
@@ -519,3 +558,42 @@ $k^\star=\frac{sf(k^\star)}{n+\delta}$，当储蓄率s↑，$k^\star$↑ ; 当n�
 
 ## 第八章 经济波动
 
+假设一个短期内的经济体，其物价和工资都不变。长期看，经济体总是稳定的，但是短期内可能会有波动。
+
+一、Goods Market
+$$
+\underbrace{Z}_{计划支出}  = \underbrace{C(Y-T)}_{消费是收入和税收的函数} +\underbrace{I(r)}_{投资是利率的函数}+\underbrace{G}_{政府消费}
+$$
+在货物市场稳定点，计划支出Z等于实际支出Y。而社会上全体储蓄（个人+政府）为产出减个人消费和政府消费$S = Y-C-G$，所以在稳定点，储蓄等于投资（$I=S$）
+
+放大作用：在货物市场中，需求增长导致的产出增长比需求增长本身更多。
+$$
+\frac{dY}{dG}=\underbrace{\frac{dC(Y-T)}{d(Y-T)}}_{MPC}\cdot \underbrace{\frac{d(Y-T)}{dG}}_{=\frac{dY}{dG}}+1
+\\=\frac{1}{1-MPC}\gt 1
+$$
+
+> MPC: marginal propensity to consume
+
+而与此同时，$\frac{dY}{dT}=\frac{dC(Y-T)}{d(Y-T)}\cdot\underbrace{\frac{d(Y-T)}{dT}}_{=\frac{dY}{dT}-1},\frac{dY}{dT}=\frac{MPC}{1-MPC}<0$ 是一个负值，且其绝对值为$\frac{\partial Y}{\partial G}$的MPC倍
+
+二、financial market
+
+设L为货币的流动性，L是一个关于产出Y和利率r的函数。当产出越多时，交易量越大，要求货币的流动性越高。而当利息越高时，人们越倾向于将钱存银行，货币的流动性差。
+
+而在金融市场中，货币流动性等于货币的供应量。$L(Y,r)=M$
+
+三、ISLM模型
+
+<img src="img/islm.PNG" alt="islm" style="zoom:60%;" />
+
+而货物市场和金融市场又会互相影响，其中关键锚点为利率r和产出Y。
+
+IS线以下，$I\gt S$; LM线以下，$L \gt M$
+
+>  设$Y=a+\alpha(Y-T)+b-\beta r+G$ ，$Y-\gamma r=M$
+>
+> 通式为：$(1-\alpha+\frac \beta\gamma)Y^\star=a+b-\alpha T+G+\frac \beta\gamma M$
+>
+> $\left[(1-\alpha)\gamma+\beta\right]\cdot r^\star=a+b-\alpha T+G-(1-\alpha)M$
+>
+> 三个外部因素：政府消费G，税收T，货币量M
