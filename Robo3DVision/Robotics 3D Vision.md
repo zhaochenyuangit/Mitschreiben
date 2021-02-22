@@ -419,8 +419,6 @@ $$
 
 $J_k\in\mathbb R^{n\times 6}$为Jacobian，即$\vec r_k$随$\xi_k$中每个元素变化而变化的量。
 
-
-
 >  数值法算$J_k$：对每个运动分量，加一个微小的变化$\epsilon$，新运动$\xi_k^\star=\log(T(\Delta\xi)\cdot T(\xi_k))$，再算一遍$\vec r^\star$，$\frac{\vec r_k^\star-\vec r_k}{\epsilon}$即对应$J_k$中该运动分量的列。
 
 每次迭代更新量：$\implies x-x_k=-H_k^{-1}b_k$，
@@ -437,7 +435,7 @@ $$
 \end{array}
 \right.
 $$
-此处的$r$不是向量值，而是$\vec r$中的每个元素。对每个元素（每对对应像素），差异小时按平方算差异，太大时按线性算差异，这样离群值造成的巨大差异就不会在整体中太过突出。
+> 此处的$r$不是向量值，而是$\vec r$中的每个元素。对每个元素（每对对应像素），差异小时按平方算差异，太大时按线性算差异，这样离群值造成的巨大差异就不会在整体中太过突出。
 
 ## EKF-SLAM
 
@@ -535,6 +533,81 @@ sigma = (eye(size(mu,1)) - K * H) * sigma;
 
 > 虽然一开始地标之间协方差均为0,但是一旦观测到地标后，由于机器人位置和地标位置绑定，而地标的应测值和机器人位置绑定，所以所有的地标位置是互相关联的，$\Sigma$会成为一个稠密的矩阵
 
+## Schur Complement
+
+高斯牛顿法：$H\cdot\Delta x=-b \implies x_{k+1}=x_k-H_k^{-1}b_k$
+
+当这个矩阵太庞大时，可以只更新一部分变量
+$$
+\begin{array}{}
+H\cdot\Delta x= -b\\\begin{pmatrix}\mathbf H_{11}&\mathbf H_{12}\\\mathbf H_{21}&\mathbf H_{22}\end{pmatrix}\cdot\begin{pmatrix}\Delta \mathbf x_1\\\Delta \mathbf x_2\end{pmatrix}=\begin{pmatrix}-\mathbf b_1\\-\mathbf b_2\end{pmatrix}\\行变化，第二行左乘-\mathbf H_{12}\mathbf H_{22}^{-1}得\\\begin{pmatrix}\mathbf H_{11}&\mathbf H_{12}\\-\mathbf H_{12}\mathbf H_{22}^{-1}\mathbf H_{21}&-\mathbf H_{12}\end{pmatrix}\cdot\begin{pmatrix}\Delta \mathbf x_1\\\Delta \mathbf x_2\end{pmatrix}=\begin{pmatrix}-\mathbf b_1\\\mathbf H_{12}\mathbf H_{22}^{-1}\mathbf b_2\end{pmatrix}\\①行+②行\implies \begin{pmatrix}\mathbf H_{11}-\mathbf H_{12}\mathbf H_{22}^{-1}\mathbf H_{21}&0\end{pmatrix}\cdot\begin{pmatrix}\Delta \mathbf x_1\\\Delta \mathbf x_2\end{pmatrix}=\begin{pmatrix}-\mathbf b_1+\mathbf H_{12}\mathbf H_{22}^{-1}\mathbf b_2\end{pmatrix}\\\begin{pmatrix}\mathbf H_{11}-\mathbf H_{12}\mathbf H_{22}^{-1}\mathbf H_{21}\end{pmatrix}\cdot\Delta \mathbf x_1=-\mathbf b_1+\mathbf H_{12}\mathbf H_{22}^{-1}\mathbf b_2
+\\\Delta \mathbf x_1=(\mathbf H_{11}-\mathbf H_{12}\mathbf H_{22}^{-1}\mathbf H_{21})^{-1}(-\mathbf b_1+\mathbf H_{12}\mathbf H_{22}^{-1}\mathbf b_2)\to式①
+\end{array}
+$$
+
+这样只更新$\mathbf x_1$,保持$\mathbf x_2$不变。将求$\mathbf H^{-1}$转化为求$\mathbf H_{22}^{-1}$，计算量下降。而$\mathbf H_{21}\Delta \mathbf x_1+\mathbf H_{22}\Delta\mathbf x_2=-\mathbf b_2\implies \Delta \mathbf x_2=-\mathbf H_{22}^{-1}(\mathbf b_2+\mathbf H_{21}\Delta \mathbf x_1) \to式②$
+
+* 应用1：visual-inertial 中的fix-lag smoothing
+
+关键帧的数量不断增多，计算量大。此时可以只更新最新的一个 fix-lag window内的变量，而将旧的状态封存，称为marginalize边缘化。
+
+> Kalman滤波 (Filtering) 是忘记所有过去的状态，仅保留当前一个状态的特例
+
+* 应用2：visual SLAM, $\mathbf x=\begin{pmatrix}\xi_0\cdots\xi_t&m_1\cdots m_s\end{pmatrix}^T$ ，高斯牛顿法中
+
+$\mathbf r(\mathbf x)=\left(\begin{array}{rcl}r^0\in\mathbb R^6&\triangleq\xi_0&\to锚点\\r^y_{0,1}\in\mathbb R^2&\triangleq y_{0,1}-h(\xi_0,m_{0,1} )\\\vdots&\vdots\\r^y_{t,i}\in\mathbb R^2&\triangleq y_{t,i}-h(\xi_t,m_{t,i})&\to t时刻观测到的第i个地标\end{array}\right)$
+
+$\mathbf W=diag\begin{pmatrix}\Sigma_{0,\xi}^{-1}&\Sigma_{y_{0,1}}^{-1}&\cdots&\Sigma_{y_{t,i}}^{-1}\end{pmatrix}$
+
+先只更新$\xi_1\cdots\xi_t$，保持$m_1\cdots m_S$不变，
+
+## Full Posterior Factorization
+
+不放弃任何一个旧状态
+
+<img src="img/network1.PNG" alt="bayesian network" style="zoom:33%;" />
+$$
+\begin{array}{}
+\textcolor{brown}{p(X_{0:t}\vert U_{1:t},Y_{0:t})}
+\\\tiny\begin{array}{}{p(X\vert U,Y_t,Y_2)}=\frac{p(X,U,Y_t,Y_2)}{p(U,Y_t,Y_2)}
+\\=\frac{p(Y_t\vert X,U,Y_2)\cdot p(X\vert U,Y_2)
+\cdot p(U,Y_2)}
+{p(Y_t\vert p(U,Y_2))\cdot p(U,Y_2)}
+\end{array}
+&=\large\frac{
+	p(Y_t\vert X_{0:t},U_{1:t},Y_{0:t-1})
+	\textcolor{red}{p(X_{0:t}\vert U_{1:t},Y_{0:t-1})}
+    }
+	{p(Y_t\vert U_{1:t},Y_{0:t-1})}
+\\\textcolor{green}{markov假设}&=\large\frac{
+\textcolor{green}{p(Y_t\vert X_t)}
+\textcolor{red}{\cdot p(X_t\vert X_{0:t-1},U_{1:t},Y_{0:t-1})
+\cdot p(X_{0:t-1}\vert U_{1:t},Y_{0:t-1})}
+}{
+p(Y_t\vert U_{1:t},Y_{0:t-1})
+}
+\\\textcolor{brown}{迭代项}&=\eta_t\cdot p(Y_t\vert X_t)
+\textcolor{green}{p(X_t\vert X_{t-1},U_t)}
+\textcolor{brown}{p(X_{0:t-1}\vert U_{1:t-1},Y_{0:t-1})}
+\\&=\cdots
+\\&=
+\underbrace{
+\left(\mathop{\prod}\limits_{\tau=0}^t\eta_\tau p(Y_\tau\vert X_\tau)\right)
+}_{观测}
+\underbrace{\left(\mathop{\prod}\limits_{\tau=1}^{t}p(X_\tau\vert X_{\tau-1},U_\tau) \right)
+}_{状态转移}
+p(X_0)
+\end{array}
+$$
+SLAM: 除了估计运动还要估计地标位置
+$$
+p(\xi_{0:t},M|Y_{0:t},U_{1:t},
+\underbrace{
+c_{0:t}
+}_{观测到?})
+=\eta\cdot p(\xi_0)p(M)\prod_tp(Y_t\vert \xi_t,m_{c_t})p(\xi_t\vert \xi_{t-1},U_t)
+$$
+
 ## PGO - Pose Graph Optimization
 
 属于姿态后处理，在使用了直接法估计了相机的运动后，由于直接法只估计相邻两帧之间的相对运动，整体的姿态误差会越来越大，最后导致闭环失败。
@@ -558,4 +631,109 @@ PSO有两个作用：
 
 3. 之后一样用高斯牛顿法：jacobian等于adjoint??
 
-   
+
+
+
+## ICP - Iterative Close Points
+
+ICP算法也可以用来估计相机运动，不过不再基于像素值而是点云的3D位置
+
+#### 一、从RGB-D相机得3D坐标
+
+ $\lambda x = KX\implies X=\lambda \cdot K^{-1}x$ 需要特别精确的深度值
+
+<img src="img/3D-3D.PNG" alt="3D-3D" style="zoom:60%;" />
+
+> 其中，像素坐标为一个和照片大小相同的长方阵列。
+
+<img src="img/cloudPoints.PNG" alt="点云"  />
+
+#### 二、求对应点
+
+两张对应照片分别得到点云后（排除深度为0的无效点），设点云1为参考，为点云2中的每个点找一个点云1中的最近邻。对应点的集合分别为$\chi_2,\chi_1\in\mathbb R^{3\times N}$，元素个数相同，均为点云2中点的数量。
+
+> 最近邻工具：KDTreeSearcher
+
+<img src="img/2clouds.PNG" alt="错位" style="zoom: 80%;" />
+
+#### 三、3D-3D mapping: Arun's Method
+
+> 属于稀疏间接法
+
+先取中心点，$\mu_1=\frac 1N\cdot \mathop{\sum}\limits_{i=1}^Nx_{1,i},\ \mu_2=\frac 1N\cdot \mathop{\sum}\limits_{i=1}^Nx_{2,i}$
+$$
+A = \underbrace{(\chi_2-\mu_2)}_{\in\mathbb R^{3\times N}}\underbrace{(\chi_1-\mu_1)^T}_{参考}\in\mathbb R^{3\times 3}
+$$
+对矩阵A，SVD分解：$A=USV^T$，则两组点云的对应关系为$R^1_2=VU^T,\ t^1_2=\mu_1-R^1_2\mu_2$
+
+变化关系为：$\chi_1 = R_2^1\chi_2+t_2^1$
+
+## 稠密深度重建
+
+Dense depth reconstruction
+
+怎么从两张2D图片获取深度信息? 八点法可以， 在计算出相机运动后接着算出八个点的深度。但是也只有这八个点。怎么获取每个像素点的深度信息?
+
+需要用到双目摄像头拍摄的两张 rectified image, 其特点是对应点在同一条平行线上：
+
+![rectified](img/rectifiedImage.PNG)
+
+在这种简化情况下，由透视关系可知：$\large \frac bz=\frac df$
+
+<img src="img/disparity.PNG" alt="disparity" style="zoom:80%;" />
+
+> 同一个物体在右侧照片照片中会偏左，像素坐标偏小
+
+所以只要能确定视差d，就能知道点的深度z。
+
+#### rectified image 寻找对应点
+
+由于左侧照片中点在右侧照片中的对应点一定在同一水平线上（纵坐标相同），而且一定在偏左侧，可以只在这一范围内寻找。
+
+![patch](img/patchCompare.PNG)
+
+> 单个像素信息太少，要拉上其周围相邻点形成一个patch才能看出一点特征。patch的大小一般为$3\times3,\ 5\times5,\cdots,11\times 11$ 等
+
+取SSD误差：$SSD=\mathop{\sum}\limits_{patch}\left(I_左(x,y)-I_右(x+\Delta x,y)\right)^2$ ,在右侧照片候选区域内SSD最小的patch即认为是对应点， 视差d 即为$\Delta x$
+
+## structure light
+
+在没有双目摄像头的情况下，由一个单摄像头主动探测深度的技术
+
+<img src="img/structurelight.PNG" alt="structurelight" style="zoom:50%;" />
+
+几何关系是两个相似三角形：
+$$
+\large{\left\{\begin{array}{}
+\frac df = \frac{D}{Z_m}\ ①
+\\\frac{D}{Z_r-Zm}=\frac b{Z_r}\ ②
+\end{array}\right.}
+\\由①得D=\frac{Z_m\cdot d}{f},代入②式：\\Z_m=\frac{Z_r}{1+\frac{Z_r\textcolor{red}{d}}{bf}}
+$$
+由于$b,f,Z_r$均是相机常数， 最后测得的深度$Z_m$只和视差d有关
+
+## Hough Transformation
+
+Line Fitting: 给一个点云阵，将其聚类成多根线
+
+基本Idea: 将每个点在参数空间内表示，参数空间内的交点表示图像上的一条线。
+
+<img src="img/hough1.PNG" alt="hough1" style="zoom: 50%;" />
+
+实际操作中，斜率+截距的方法无法表示垂直线，所以用polar line 代替：$x\cos\theta +y\sin\theta=d$，用直线到原点距离$d$和角度$\theta$表示一条直线。
+
+<img src="img/polarLine.PNG" alt="polar line" style="zoom: 67%;" />
+
+<img src="img/hough2.PNG" alt="hough2" style="zoom:50%;" />
+
+除直线之外，也可以捕捉任何形状：
+
+
+
+待补充知识点：
+
+1. Schur complement *
+2. visual inertial
+3. structure light *
+4. Hough transformation
+5. surfels and 3D Harris operator

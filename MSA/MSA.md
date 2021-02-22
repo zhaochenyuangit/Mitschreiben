@@ -51,6 +51,10 @@
 
 ![](img/111echtlingshape.PNG)
 
+因为六面晶体一共只有三种类型的面：$\{1,0,0\},\{1,1,0\},\{1,1,1\}$, 为了利用$\{1,1,1\}$抗腐蚀的特性，往往以$\{1,0,0\}或\{1,1,0\}$ 为表面
+
+<img src="img/anisoaetzen.png" alt="aniso" style="zoom:67%;" />
+
 ## 三、压电陶瓷
 
 Direct-piezo 效应：挤压形变产生电势
@@ -102,5 +106,29 @@ $$
 
 ## 八、光纤
 
+<img src="img/glasfiber.PNG" alt="光纤原理" style="zoom: 67%;" />
 
+折射角和入射角的关系：$n_k\cdot\sin\beta=n_m\cdot\sin\delta$，所以不发生折射的极限情况为当$\delta=90^\circ$时，即$n_k\cdot\sin\beta=n_m\cdot 1\implies \sin(\beta_{极限})=\frac{n_m}{n_k}$
+
+信号发射机从**空气**向光纤发射信号，其角度与光纤切面夹角为$\gamma$，所以$n_0\cdot\sin\gamma=n_k\cdot\sin\alpha=n_k\cdot\cos\beta$ 而空气中折射率$n_0=1$, 信号入射的极限角度为$\sin\gamma_{极限}=n_k\cdot\cos\beta_{极限}=n_k\sqrt{1-\sin^2\beta}=\sqrt{n_k^2-(n_k\cdot\sin\beta)^2}=\sqrt{n_k^2-n_m^2}$。
+
+即信号入射角度$\sin\gamma\lt\underbrace{\sqrt{n_k^2-n_m^2}}_{numerische\ Apetur}$
+
+**计算最大模数**： $k=\frac{Z^2}{2},Z=\pi\cdot d\cdot \frac1\lambda\cdot\sqrt{n_k^2-n_m^2}$
+
+$Z\gt2.4$称为多模光纤，$Z\le2.4$称为单模光纤
+
+**计算不同模态之间最大时间差：**
+
+最快是直线传播，最慢是沿极限入射角传播
+
+<img src="img/direct&amp;grenz.PNG" alt="传播" style="zoom:67%;" />
+
+直线传播所用时间：$\tau_{直线}=\frac{l}{v}=\frac{l}{\frac{c}{n_k}}=\frac{l\cdot n_k}{c}$ _单位：秒s_
+
+极限入射角所用时间：$\tau_\max=\frac{l}{v\cdot\sin(\beta_{极限})}=\frac{l}{\frac{c}{n_k}\cdot\frac{n_m}{n_k}}=\frac{l\cdot n_k^2}{c\cdot n_m} $
+
+两者的时间差为：$\Delta\tau =\tau_\max-\tau_{直线}=\frac lc\cdot\frac{n_k}{n_m}(n_k-n_m) $
+
+**计算最大带宽：** $B=\frac{1}{2\cdot\Delta\tau}=\frac{1}{2\cdot(\tau_\max-\tau_{直线})}$ _单位：$\frac 1s=Hz$_
 
