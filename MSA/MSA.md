@@ -122,7 +122,7 @@ $Z\gt2.4$称为多模光纤，$Z\le2.4$称为单模光纤
 
 最快是直线传播，最慢是沿极限入射角传播
 
-<img src="img/direct&amp;grenz.PNG" alt="传播" style="zoom:67%;" />
+<img src="img/direct&amp;grenz.PNG" alt="verbreitung" style="zoom:60%;" />
 
 直线传播所用时间：$\tau_{直线}=\frac{l}{v}=\frac{l}{\frac{c}{n_k}}=\frac{l\cdot n_k}{c}$ _单位：秒s_
 

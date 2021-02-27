@@ -379,7 +379,11 @@ corners定义：在图片x,y两个方向上移动$(u,v)$距离，总会产生像
 * $Hx_+=\lambda_+x_+$：对应变化最大方向
 * $Hx_-=\lambda_-x_-$：对应变化最小方向
 
-Harris operator: $f=\frac{\lambda_-\cdot\lambda_+}{\lambda_-+\lambda_+}=\frac{|H|}{trace(H)}$ 转为求$H$的模及迹，更快但是损失一些精度。$f\gt$某个阈值即为要找的corner点。
+#### Harris operator
+
+> 原理：构建矩阵$\mathbf H$后，要找到corner point就是找图像上像素值变化剧烈的点。Harris operatior 用一个heuristic来代替精确的算法，提高计算速度。
+
+ $f=\frac{\lambda_-\cdot\lambda_+}{\lambda_-+\lambda_+}=\frac{|H|}{trace(H)}$ 转为求$H$的模及迹，更快但是损失一些精度。$f\gt$某个阈值即为要找的corner点。
 
 ## RANSAC算法
 
@@ -629,7 +633,9 @@ PSO有两个作用：
 
    > 原点的姿态优化比较特殊，原点应一直保留在原点不动，否则会给这个优化问题额外加6个自由度，得不到想要的结果，∴ $r_0 = \xi_0$ 即初始姿态应保持$\begin{pmatrix}I&O\\0&1\end{pmatrix}$,对应的$\xi_0=\begin{pmatrix}0&0&0&0&0&0\end{pmatrix}^T$。只要偏一点都是不对的。
 
-3. 之后一样用高斯牛顿法：jacobian等于adjoint??
+3. 之后一样用高斯牛顿法：jacobian等于adjoint?
+
+<img src="img/questionaboutAdjoint2.PNG" alt="adjoint" style="zoom: 80%;" />
 
 
 
@@ -728,12 +734,28 @@ Line Fitting: 给一个点云阵，将其聚类成多根线
 
 除直线之外，也可以捕捉任何形状：
 
+## 3D 特征Surfels
 
+**surf**ace **el**ements = surfels
 
-待补充知识点：
+点云本身只有点的坐标，并不包含表面朝向的信息。计算一个点的表面法线方向需要用到其一个小范围内的近邻点。
+$$
+\mathbf {\bar p}=\frac 1N\sum_{\vert \mathbf p_j-\mathbf p_i\vert\lt r} p_j
+\\协方差矩阵\Sigma(\mathbf p_i)=
+\sum_{\vert \mathbf p_j-\mathbf p_i\vert\lt r}
+(\mathbf p_j-\mathbf{\bar p_i})(\mathbf p_j-\mathbf{\bar p_i})^T
+$$
+平面的法线方向即为$\Sigma(\mathbf p_i)$的最小特征值所对应的特征向量。不过此向量是向内还是向外还需人工添加信息。
 
-1. Schur complement *
-2. visual inertial
-3. structure light *
-4. Hough transformation
-5. surfels and 3D Harris operator
+<img src="img/surfels.PNG" alt="surfels" style="zoom: 50%;" />
+
+#### 3D Harris operator
+
+$\mathbf H=\mathop \sum\limits_{i:\mathbf p_i\in W}\mathbf n_i\mathbf n_i^T$
+
+heuristic为：$f=\det(\mathbf H)-0.04\  trace(\mathbf {H})^2$
+
+检测表面法线变化剧烈处，但无法检测像素值的变化。可理解为只有“触觉”没有“视觉”。
+
+<img src="img/harris3d.PNG" alt="3dharris" style="zoom:67%;" />
+
